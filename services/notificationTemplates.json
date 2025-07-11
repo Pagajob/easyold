@@ -1,0 +1,113 @@
+[
+  {
+    "type": "reminder_before_departure",
+    "title": {
+      "fr": "Rappel location à venir",
+      "en": "Upcoming rental reminder"
+    },
+    "message": {
+      "fr": "Votre location commence bientôt !",
+      "en": "Your rental is starting soon!"
+    },
+    "trigger": "3 heures avant date_debut",
+    "users": [
+      "client"
+    ],
+    "icon": "🚗",
+    "color": "#3B82F6",
+    "action": {
+      "type": "open_reservation",
+      "data": {
+        "reservationId": "{{reservationId}}"
+      }
+    }
+  },
+  {
+    "type": "contract_signed",
+    "title": {
+      "fr": "Contrat signé",
+      "en": "Contract signed"
+    },
+    "message": {
+      "fr": "Votre contrat a été signé avec succès.",
+      "en": "Your contract has been signed successfully."
+    },
+    "users": [
+      "client",
+      "admin"
+    ],
+    "icon": "📝",
+    "color": "#10B981",
+    "action": {
+      "type": "open_contract",
+      "data": {
+        "contractId": "{{contractId}}"
+      }
+    }
+  },
+  {
+    "type": "fuel_low",
+    "title": {
+      "fr": "Carburant faible",
+      "en": "Low fuel"
+    },
+    "message": {
+      "fr": "Le niveau de carburant est inférieur à 25%.",
+      "en": "Fuel level is below 25%."
+    },
+    "users": [
+      "client"
+    ],
+    "icon": "⛽️",
+    "color": "#F59E42",
+    "action": {
+      "type": "open_reservation",
+      "data": {
+        "reservationId": "{{reservationId}}"
+      }
+    }
+  },
+  {
+    "type": "late_return",
+    "title": {
+      "fr": "Retour en retard",
+      "en": "Late return"
+    },
+    "message": {
+      "fr": "Le véhicule n’a pas été restitué à l’heure.",
+      "en": "The vehicle was not returned on time."
+    },
+    "users": [
+      "client",
+      "admin"
+    ],
+    "icon": "⏰",
+    "color": "#EF4444",
+    "action": {
+      "type": "open_reservation",
+      "data": {
+        "reservationId": "{{reservationId}}"
+      }
+    }
+  },
+  {
+    "type": "custom",
+    "title": {
+      "fr": "Notification",
+      "en": "Notification"
+    },
+    "message": {
+      "fr": "{{message}}",
+      "en": "{{message}}"
+    },
+    "users": [
+      "client",
+      "admin"
+    ],
+    "icon": "🔔",
+    "color": "#6366F1",
+    "action": {
+      "type": "open_app"
+    }
+  }
+]

@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "EasyGarage",
+    "slug": "easygarage-app",
+    "version": "1.0.4",
+    "orientation": "portrait",
+    "icon": "./assets/images/easygarage-icon.png",
+    "scheme": "easygarage",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/easygarage-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/easygarage-favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow EasyGarage to access your Face ID biometric data."
+        }
+      ],
+      [
+        "expo-apple-authentication",
+        {
+          "serviceId": "com.easygarage.app"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.allanox.easygarageapp",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.easygarage.app"
+    }
+  }
+}

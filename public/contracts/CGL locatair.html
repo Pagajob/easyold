@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Contrat de location</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      line-height: 1.4;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #2563EB;
+      padding-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header h1 {
+      color: #2563EB;
+      margin-bottom: 5px;
+      font-size: 24px;
+    }
+    .header p {
+      color: #666;
+      margin: 5px 0;
+    }
+    .section {
+      margin-bottom: 20px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      background-color: #f0f0f0;
+      padding: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 14px;
+      border-left: 4px solid #2563EB;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      font-size: 12px;
+    }
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 50px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+      font-size: 10px;
+    }
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 50px;
+    }
+    .signature-box {
+      border-top: 1px solid #000;
+      width: 45%;
+      padding-top: 10px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .terms {
+      font-size: 9px;
+      margin-top: 30px;
+      text-align: justify;
+    }
+    .amount-highlight {
+      background-color: #fff3cd;
+      padding: 10px;
+      border-left: 4px solid #ffc107;
+      margin: 10px 0;
+    }
+    .reservation-id {
+      background-color: #e3f2fd;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    @media print {
+      body { margin: 0; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>CONTRAT DE LOCATION</h1>
+    <!-- LOGO_ENTREPRISE_PLACEHOLDER -->
+    <p><strong>{{nom_entreprise}}</strong></p>
+    {{#if siret_entreprise}}<p>SIRET: {{siret_entreprise}}</p>{{/if}}
+    <p>{{adresse_entreprise}}</p>
+  </div>
+  
+  <div class="reservation-id">
+    <p>Numéro de réservation: {{reservation_id}}</p>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">CLIENT(S) - CONDUCTEUR(S)</div>
+    <table>
+      <tr>
+        <td width="50%"><strong>Nom:</strong> {{nom_client}}</td>
+        <td width="50%"><strong>Téléphone:</strong> {{telephone_client}}</td>
+      </tr>
+      <tr>
+        <td><strong>Email:</strong> {{email_client}}</td>
+        <td><strong>Type de contrat:</strong> {{type_contrat}}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>Adresse:</strong> {{adresse_client}}</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">VEHICULE</div>
+    <table>
+      <tr>
+        <td width="50%"><strong>Marque et modèle:</strong> {{vehicule_marque}} {{vehicule_modele}}</td>
+        <td width="50%"><strong>Carburant:</strong> {{vehicule_carburant}}</td>
+      </tr>
+      <tr>
+        <td><strong>Immatriculation:</strong> {{vehicule_immatriculation}}</td>
+        <td><strong>Kilométrage inclus:</strong> {{kilometrage_inclus}} km/jour</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">DETAILS DE LA RESERVATION</div>
+    <table>
+      <tr>
+        <td width="50%"><strong>Date et heure de départ:</strong> {{date_debut}} à {{heure_debut}}</td>
+        <td width="50%"><strong>Date et heure de retour:</strong> {{date_fin}} à {{heure_fin}}</td>
+      </tr>
+      <tr>
+        <td><strong>Kilométrage au départ:</strong> {{kilometrage_depart_edl}}</td>
+        <td><strong>Km supplémentaire:</strong> {{prixKmSupplementaire}} €/km</td>
+      </tr>
+      <tr>
+        <td><strong>Niveau carburant départ:</strong> {{carburant_depart}}/{{carburant_max}}</td>
+        <td><strong>Kilométrage inclus:</strong> {{kilometrage_inclus}} km/jour</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="amount-highlight">
+    <div class="section-title">MONTANT DE LA LOCATION</div>
+    <table>
+      <tr>
+        <td width="50%"><strong>Montant total:</strong></td>
+        <td width="50%"><strong>{{montant_location}} €</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Caution de départ:</strong></td>
+        <td><strong>{{cautiondepart}} €</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Caution RSV:</strong></td>
+        <td><strong>{{cautionRSV}} €</strong></td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">TARIFS ET FRAIS POTENTIELS</div>
+    <table>
+      <tr>
+        <th>Dégât</th>
+        <th>Montant facturé</th>
+      </tr>
+      <tr>
+        <td>Jante frottée</td>
+        <td>{{jante_frottee}}€ / remplacement si non réparable</td>
+      </tr>
+      <tr>
+        <td>Carburant manquant</td>
+        <td>{{carburant_manquant}}€ par litre</td>
+      </tr>
+      <tr>
+        <td>Nettoyage</td>
+        <td>{{nettoyage}}€</td>
+      </tr>
+      <tr>
+        <td>Retard (par tranche de 30min)</td>
+        <td>{{retard}}€</td>
+      </tr>
+      <tr>
+        <td>Rayure</td>
+        <td>Peinture de l'élément</td>
+      </tr>
+      <tr>
+        <td>Pare-brise</td>
+        <td>Achat + montage (environ 300€)</td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="signatures">
+    <div class="signature-box">
+      <p><strong>Signature du loueur</strong></p>
+      <br><br>
+      <p>{{nom_entreprise}}</p>
+    </div>
+    <div class="signature-box">
+      <p><strong>Signature du client</strong></p>
+      <br><br>
+      <!-- SIGNATURE_CLIENT_PLACEHOLDER -->
+      <p>{{nom_client}}</p>
+    </div>
+  </div>
+  
+  <div class="terms">
+    <p><strong>CONDITIONS GÉNÉRALES DE LOCATION</strong></p>
+    
+    <p><strong>ARTICLE 1. RÉSERVATION :</strong> Le présent contrat régit la location du véhicule mentionné ci-dessus.</p>
+    
+    <p><strong>ARTICLE 2. RESPONSABILITÉS :</strong> Le locataire s'engage à utiliser le véhicule conformément aux règles de circulation.</p>
+    
+    <p><strong>ARTICLE 3. RESTITUTION :</strong> Le véhicule doit être restitué dans l'état où il a été remis, au lieu et à l'heure convenus.</p>
+    
+    <p><strong>ARTICLE 4. ASSURANCE :</strong> Le véhicule est couvert par une assurance tous risques selon les conditions en vigueur.</p>
+    
+    <p><strong>ARTICLE 5. CONDUCTEUR :</strong> Pour louer et conduire un véhicule, le client doit nécessairement avoir plus de {{ageminimal}} ans révolus et disposer d'un permis de conduire valide obtenu depuis au moins {{anneepermis}} an(s).</p>
+    
+    <p><strong>ARTICLE 6. RETARD :</strong> Tout retard de restitution est facturé à hauteur de {{retard}}€ par tranche de 30 minutes.</p>
+    
+    <p><strong>ARTICLE 7. AMENDES :</strong> Le client s'engage à régler tous frais, amendes et dépenses pour toute infraction au code de la route, au stationnement, etc.</p>
+    
+    <p><strong>ARTICLE 8. RÉPARATIONS :</strong> Le client n'est pas autorisé à effectuer de réparations sur le véhicule sauf autorisation expresse de la société.</p>
+    
+    <p><strong>ARTICLE 9. FRANCHISES :</strong> En cas de sinistre, les franchises mentionnées dans ce contrat restent à la charge du locataire.</p>
+    
+    <p><strong>ARTICLE 10. CARBURANT :</strong> Le véhicule est fourni avec un niveau de carburant qui doit être restitué à l'identique. Tout carburant manquant sera facturé au prix indiqué ci-dessus.</p>
+  </div>
+  
+  <div class="footer">
+    <p>Document généré automatiquement le {{date_generation}}</p>
+    <p>Réservation N°: {{reservation_id}}</p>
+    <p>{{nom_entreprise}} - Application de gestion de location de véhicules</p>
+  </div>
+</body>
+</html>
