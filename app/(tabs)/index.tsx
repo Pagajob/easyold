@@ -104,7 +104,7 @@ export default function DashboardScreen() {
   const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.headerContainer}>
           <View style={styles.headerTextContainer}>
@@ -163,11 +163,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
   headerContainer: {
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: 20,
     paddingBottom: 12,
     justifyContent: 'space-between',
     alignItems: 'center',

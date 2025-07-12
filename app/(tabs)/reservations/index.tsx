@@ -329,12 +329,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
   header: {
     backgroundColor: colors.surface,
-    paddingTop: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border + '60', 
