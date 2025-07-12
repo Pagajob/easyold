@@ -59,7 +59,7 @@ export default function ClientsScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [60, 160], // Collapsed height vs full height
+    outputRange: [60, 180], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -143,7 +143,7 @@ export default function ClientsScreen() {
           </View>
 
           {/* Animated content that will collapse/expand */}
-          <Animated.View style={[
+          <Animated.View pointerEvents={isFilterCollapsed ? 'none' : 'auto'} style={[
             styles.collapsibleContent,
             { opacity: filterHeight }
           ]}>
@@ -237,7 +237,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     paddingTop: 16,
     paddingBottom: 16,
-    borderBottomWidth: 1,
+    paddingBottom: 16,
     borderBottomColor: colors.border + '60', 
     overflow: 'hidden',
   },

@@ -84,7 +84,7 @@ export default function VehiclesScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [60, 220], // Collapsed height vs full height
+    outputRange: [60, 240], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -201,7 +201,7 @@ export default function VehiclesScreen() {
 
           <>
           {/* Animated content that will collapse/expand */}
-          <Animated.View style={[
+          <Animated.View pointerEvents={isFilterCollapsed ? 'none' : 'auto'} style={[
             styles.collapsibleContent,
             { opacity: filterHeight }
           ]}>
@@ -386,7 +386,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     backgroundColor: colors.surface,
     paddingTop: 16,
-    borderBottomWidth: 1,
+    paddingBottom: 16,
     borderBottomColor: colors.border + '60',
     overflow: 'hidden',
   },
