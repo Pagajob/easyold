@@ -442,7 +442,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 28,
-    paddingHorizontal: 5,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
   },
