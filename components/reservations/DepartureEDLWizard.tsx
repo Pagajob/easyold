@@ -286,40 +286,16 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
           >
             <Text style={styles.retakeButtonText}>Reprendre la photo</Text>
           </TouchableOpacity>
-            <FuelLevelSlider
-              value={edlData.fuelLevel}
-              onValueChange={(value) => setEdlData(prev => ({ ...prev, fuelLevel: value }))}
-              maxLevel={8}
-            />
-            <Text style={styles.checklistLabel}>
-              {item.label}
-              {item.required && <Text style={styles.requiredMark}> *</Text>}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        </View>
+      )}
 
       <View style={styles.fuelContainer}>
         <Text style={styles.fuelLabel}>Niveau de carburant</Text>
-        <View style={styles.fuelSelector}>
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((level) => (
-            <TouchableOpacity
-              key={level}
-              style={[
-                styles.fuelLevel,
-                edlData.fuelLevel >= level && styles.fuelLevelActive
-              ]}
-              onPress={() => setEdlData(prev => ({ ...prev, fuelLevel: level }))}
-            >
-              <Text style={[
-                styles.fuelLevelText,
-                edlData.fuelLevel >= level && styles.fuelLevelTextActive
-              ]}>
-                {level}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <FuelLevelSlider
+          value={edlData.fuelLevel}
+          onValueChange={(value) => setEdlData(prev => ({ ...prev, fuelLevel: value }))}
+          maxLevel={8}
+        />
       </View>
 
       <TextInput
@@ -331,6 +307,35 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
         numberOfLines={4}
         placeholderTextColor={colors.textSecondary}
       />
+    </View>
+  );
+
+  const renderChecklistStep = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>Liste de vérification</Text>
+      
+      <View style={styles.checklistContainer}>
+        {CHECKLIST_ITEMS.map((item) => (
+          <TouchableOpacity
+            key={item.key}
+            style={styles.checklistItem}
+            onPress={() => handleChecklistChange(item.key, !edlData.checklist[item.key as keyof typeof edlData.checklist])}
+          >
+            <View style={[
+              styles.checkbox,
+              edlData.checklist[item.key as keyof typeof edlData.checklist] && styles.checkboxChecked
+            ]}>
+              {edlData.checklist[item.key as keyof typeof edlData.checklist] && (
+                <Check size={16} color={colors.background} />
+              )}
+            </View>
+            <Text style={styles.checklistLabel}>
+              {item.label}
+              {item.required && <Text style={styles.requiredMark}> *</Text>}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
