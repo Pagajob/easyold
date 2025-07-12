@@ -7,9 +7,11 @@ import Animated, {
   withSpring,
   withRepeat,
   withSequence,
+  withDelay,
   runOnJS,
   interpolate,
   Extrapolate,
+  Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +29,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
+  const logoRotation = useSharedValue(0);
   const textOpacity = useSharedValue(0);
   const textProgress = useSharedValue(0);
   const cursorOpacity = useSharedValue(0);
@@ -49,6 +52,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const logoStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: logoScale.value },
+      { rotate: `${logoRotation.value}deg` },
     ],
     opacity: logoOpacity.value,
   }));
@@ -87,6 +91,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         damping: 8,
         stiffness: 100,
         mass: 0.8,
+        restDisplacementThreshold: 0.01,
       });
     }, 400);
 
@@ -130,6 +135,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       }, 30); // vitesse accélérée
     }, 1400);
 
+    // 6.5. Rotation du logo (3000ms)
+    setTimeout(() => {
+      logoRotation.value = withTiming(360, {
+        duration: 800,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }, 3000);
+
     // 6. Skip button available (1500ms+)
     setTimeout(() => {
       canSkip.current = true;
@@ -139,9 +152,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     // 7. Auto finish (3500ms)
     setTimeout(() => {
       if (!animationFinished.current) {
-        finishAnimation();
+        // Délai supplémentaire pour permettre à la rotation de se terminer
+        setTimeout(() => {
+          finishAnimation();
+        }, 500);
       }
-    }, 3500);
+    }, 3800);
   };
 
   const finishAnimation = () => {
@@ -152,6 +168,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     logoOpacity.value = withTiming(0, { duration: 300 });
     textOpacity.value = withTiming(0, { duration: 300 });
     glowOpacity.value = withTiming(0, { duration: 200 });
+    logoRotation.value = withTiming(720, { duration: 500 });
     cursorOpacity.value = withTiming(0, { duration: 200 });
     skipButtonOpacity.value = withTiming(0, { duration: 200 });
     
@@ -256,7 +273,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    borderRadius: 50,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -268,6 +285,7 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 60,
     height: 60,
+    borderRadius: 8,
   },
   appName: {
     fontSize: 32,
