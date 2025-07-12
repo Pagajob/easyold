@@ -493,10 +493,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 28,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     gap: 8,
   },
   filterButtonActive: {
