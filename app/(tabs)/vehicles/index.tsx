@@ -84,7 +84,7 @@ export default function VehiclesScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [60, 240], // Collapsed height vs full height
+    outputRange: [80, 240], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -386,7 +386,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     backgroundColor: colors.surface,
     paddingTop: 16,
-    paddingBottom: 16,
     borderBottomColor: colors.border + '60',
     overflow: 'hidden',
   },
@@ -401,7 +400,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 16,
+    paddingBottom: 16,
+    zIndex: 10, // Ensure buttons stay on top
   },
   headerActions: {
     flexDirection: 'row',
@@ -462,7 +462,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   collapsedSearchContainer: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 8,
     zIndex: 10,
   },
   searchBar: {
