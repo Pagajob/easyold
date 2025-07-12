@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     top: -10,
     left: -10,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    borderRadius: 28,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: 0,
   },
   appName: {
     fontSize: 32,
