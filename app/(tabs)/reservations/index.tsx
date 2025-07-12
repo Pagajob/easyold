@@ -444,7 +444,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+    gap: 12,
   },
   filterButtonActive: {
     borderColor: 'transparent',
