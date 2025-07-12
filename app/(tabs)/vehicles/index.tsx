@@ -494,9 +494,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderRadius: 28,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   filterButtonActive: {
@@ -512,7 +512,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filterBadge: {
     backgroundColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 28,
     paddingHorizontal: 6,
     paddingVertical: 2,
     minWidth: 20,
