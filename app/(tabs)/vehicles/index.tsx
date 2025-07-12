@@ -496,7 +496,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 28,
     paddingHorizontal: 16,
-    paddingVertical: 1,
+    paddingVertical: 5,
     gap: 8,
   },
   filterButtonActive: {
