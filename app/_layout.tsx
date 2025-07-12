@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, View } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -13,6 +13,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import AuthGuard from '@/components/AuthGuard';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React from 'react';
 
 // Prevent splash screen from auto-hiding
@@ -99,28 +100,30 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <DataProvider>
-          <SettingsProvider>
-            <NotificationProvider>
-              <SplashScreenGate>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen 
-                    name="(auth)" 
-                    options={{ 
-                      headerShown: false,
-                      // Prevent going back to auth screens once logged in
-                      gestureEnabled: false 
-                    }} 
-                  />
-                  <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                  <Stack.Screen name="+not-found" />
-                </Stack>
-                <StatusBar style="auto" />
-              </SplashScreenGate>
-            </NotificationProvider>
-          </SettingsProvider>
-        </DataProvider>
+        <SafeAreaProvider>
+          <DataProvider>
+            <SettingsProvider>
+              <NotificationProvider>
+                <SplashScreenGate>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen 
+                      name="(auth)" 
+                      options={{ 
+                        headerShown: false,
+                        // Prevent going back to auth screens once logged in
+                        gestureEnabled: false 
+                      }} 
+                    />
+                    <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <StatusBar style="auto" />
+                </SplashScreenGate>
+              </NotificationProvider>
+            </SettingsProvider>
+          </DataProvider>
+        </SafeAreaProvider>
       </AuthProvider>
     </ThemeProvider>
   );

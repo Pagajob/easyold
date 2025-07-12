@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 50 : 12,
+    paddingTop: Platform.OS === 'ios' ? 12 : 12,
     minHeight: 60,
   },
   iconContainer: {
