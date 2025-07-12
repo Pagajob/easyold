@@ -508,11 +508,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
   },
   filterTextActive: {
-    color: colors.background,
+    color: colors.background, 
   },
   filterBadge: {
     backgroundColor: colors.border,
-    borderRadius: 5,
+    borderRadius: 12,
     paddingHorizontal: 6,
     paddingVertical: 2,
     minWidth: 20,
