@@ -14,6 +14,13 @@ export interface EDLData {
     additionnelles?: string[];
   };
   video?: string;
+  checklist?: {
+    [key: string]: boolean;
+  };
+  comments?: string;
+  fuelLevel?: number;
+  skipMedia?: boolean;
+  skipReason?: string;
 }
 
 // Clés des photos obligatoires selon le mode
@@ -78,7 +85,13 @@ export function validateEDL(edlData: EDLData): ValidationResult {
     missingSteps.push('compteur');
   }
 
-  if (edlData.mode === 'photo') {
+  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
+  if (edlData.skipMedia) {
+    // Vérifier que la raison est fournie
+    if (!edlData.skipReason) {
+      errors.push('Une justification est requise pour l\'absence de photos/vidéo');
+    }
+  } else if (edlData.mode === 'photo') {
     // Validation mode photo : toutes les photos obligatoires
     for (const key of PHOTO_MODE_OBLIGATORY_KEYS) {
       if (key === 'compteur') continue; // Déjà validé
@@ -107,6 +120,12 @@ export function validateEDL(edlData: EDLData): ValidationResult {
  * Vérifie si une étape spécifique est complétée
  */
 export function isStepCompleted(edlData: EDLData, stepKey: string): boolean {
+  // Si l'option "skipMedia" est activée, on considère toutes les étapes comme complétées
+  // sauf le compteur qui reste obligatoire
+  if (edlData.skipMedia && stepKey !== 'compteur') {
+    return true;
+  }
+  
   if (stepKey === 'compteur') {
     return !!edlData.photos.compteur;
   }
@@ -123,6 +142,11 @@ export function isStepCompleted(edlData: EDLData, stepKey: string): boolean {
  */
 export function calculateProgress(edlData: EDLData): number {
   if (!edlData.mode) return 0;
+
+  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
+  if (edlData.skipMedia) {
+    return edlData.photos.compteur ? 100 : 0;
+  }
   
   const validation = validateEDL(edlData);
   const totalSteps = edlData.mode === 'photo' ? PHOTO_MODE_OBLIGATORY_KEYS.length : 2; // compteur + vidéo
@@ -135,6 +159,11 @@ export function calculateProgress(edlData: EDLData): number {
  * Obtient les étapes restantes à compléter
  */
 export function getRemainingSteps(edlData: EDLData): string[] {
+  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
+  if (edlData.skipMedia) {
+    return edlData.photos.compteur ? [] : ['compteur'];
+  }
+  
   const validation = validateEDL(edlData);
   return validation.missingSteps;
 }
