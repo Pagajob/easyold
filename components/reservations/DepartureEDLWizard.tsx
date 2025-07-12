@@ -172,8 +172,7 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
           style={[styles.modeButton, edlData.mode === 'photo' && !edlData.skipMedia && styles.modeButtonActive]}
           onPress={() => handleModeSelection('photo')}
         >
-          <Camera size={24} color={edlData.mode === 'photo' && !edlData.skipMedia ? colors.primary : colors.text} />
-          <Text style={[styles.modeButtonText, edlData.mode === 'photo' && !edlData.skipMedia && styles.modeButtonTextActive]}>
+          <Camera size={24} color={edlData.mode === 'photo' && !edlData.skipMedia ? colors.primary : colors.text} /><Text style={[styles.modeButtonText, edlData.mode === 'photo' && !edlData.skipMedia && styles.modeButtonTextActive]}>
             Photos
           </Text>
         </TouchableOpacity>
@@ -182,8 +181,7 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
           style={[styles.modeButton, edlData.mode === 'video' && !edlData.skipMedia && styles.modeButtonActive]}
           onPress={() => handleModeSelection('video')}
         >
-          <Camera size={24} color={edlData.mode === 'video' && !edlData.skipMedia ? colors.primary : colors.text} />
-          <Text style={[styles.modeButtonText, edlData.mode === 'video' && !edlData.skipMedia && styles.modeButtonTextActive]}>
+          <Camera size={24} color={edlData.mode === 'video' && !edlData.skipMedia ? colors.primary : colors.text} /><Text style={[styles.modeButtonText, edlData.mode === 'video' && !edlData.skipMedia && styles.modeButtonTextActive]}>
             Vidéo
           </Text>
         </TouchableOpacity>
