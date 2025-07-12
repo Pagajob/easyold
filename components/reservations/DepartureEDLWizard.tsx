@@ -333,6 +333,7 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
               {item.label}
               {item.required && <Text style={styles.requiredMark}> *</Text>}
             </Text>
+          </View>
           </TouchableOpacity>
         ))}
       </View>
