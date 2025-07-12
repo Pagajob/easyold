@@ -512,7 +512,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filterBadge: {
     backgroundColor: colors.border,
-    borderRadius: 28,
+    borderRadius: 5,
     paddingHorizontal: 6,
     paddingVertical: 2,
     minWidth: 20,
