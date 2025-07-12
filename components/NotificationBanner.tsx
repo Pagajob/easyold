@@ -9,7 +9,7 @@ import {
   StatusBar,
   Platform
 } from 'react-native';
-import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react-native';
+import { X, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export type BannerType = 'success' | 'error' | 'warning' | 'info';
