@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera, Check, TriangleAlert as AlertTriangle } from 'lucide-react-native';
-import { CameraView } from '../CameraView';
+import CameraView from '../CameraView';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface DepartureEDLWizardProps {
