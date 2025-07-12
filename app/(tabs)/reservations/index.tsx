@@ -430,18 +430,20 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filtersContainer: {
     paddingLeft: 20,
+    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 20,
     gap: 8,
+    paddingBottom: 8,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 28,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     gap: 8,
   },
   filterButtonActive: {
@@ -458,8 +460,8 @@ const createStyles = (colors: any) => StyleSheet.create({
   filterBadge: {
     backgroundColor: colors.border,
     borderRadius: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     minWidth: 20,
     alignItems: 'center',
   },
