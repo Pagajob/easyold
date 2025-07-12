@@ -174,4 +174,4 @@ export function getRemainingSteps(edlData: EDLData): string[] {
 export function getCompletedSteps(edlData: EDLData): string[] {
   const allSteps = edlData.mode === 'photo' ? PHOTO_MODE_OBLIGATORY_KEYS : ['compteur', 'video'];
   return allSteps.filter(step => isStepCompleted(edlData, step));
-} 
+}

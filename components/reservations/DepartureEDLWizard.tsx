@@ -48,7 +48,7 @@ const CHECKLIST_ITEMS = [
   { key: 'documents', label: 'Documents', required: true },
 ];
 
-export function DepartureEDLWizard({ reservation, onComplete, onCancel }: DepartureEDLWizardProps) {
+export default function DepartureEDLWizard({ reservation, onComplete, onCancel }: DepartureEDLWizardProps) {
   const { colors } = useTheme();
   const [currentStep, setCurrentStep] = useState(1);
   const [showCamera, setShowCamera] = useState(false);
