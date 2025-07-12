@@ -131,7 +131,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
   content: {
     flex: 1,

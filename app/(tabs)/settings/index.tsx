@@ -601,12 +601,11 @@ const createStyles = (colors: any) =>
     container: { 
       flex: 1, 
       backgroundColor: colors.background,
-      position: 'relative',
-      paddingTop: Platform.OS === 'ios' ? 0 : 0,
+      position: 'relative'
     },
     scrollContent: {
       paddingBottom: 100,
-      paddingTop: Platform.OS === 'ios' ? 60 : 0,
+      paddingTop: 16,
     },
     header: { 
       padding: 24, 
