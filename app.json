@@ -2,24 +2,25 @@
   "expo": {
     "name": "EasyGarage",
     "slug": "easygarage-app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/easygarage-icon.png",
     "scheme": "easygarage",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.allanox.easygarage.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/easygarage-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+      "package": "com.allanox.easygarage.app"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "server",
       "favicon": "./assets/images/easygarage-favicon.png"
     },
     "plugins": [
@@ -34,19 +35,20 @@
       [
         "expo-apple-authentication",
         {
-          "serviceId": "com.easygarage.app"
+          "serviceId": "com.allanox.easygarage.app"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "ios": {
-      "bundleIdentifier": "com.allanox.easygarageapp",
-      "supportsTablet": true
-    },
-    "android": {
-      "package": "com.easygarage.app"
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "301807a1-852a-4356-859d-ff9cdbd6fd3b"
+      }
     }
   }
 }

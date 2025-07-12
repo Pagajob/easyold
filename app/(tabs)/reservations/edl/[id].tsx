@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
-import { ArrowLeft, Save, User, Car, Clock, FileText, CheckCircle } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Image } from 'react-native';
+import { ArrowLeft, Save, User, Car, Clock, FileText, CheckCircle, Calendar } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useData, Reservation, Vehicle } from '@/contexts/DataContext'; 
 import { useContracts } from '@/hooks/useContracts';
@@ -9,8 +9,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import SignaturePad from '@/components/SignaturePad';
 import { ReservationService } from '@/services/firebaseService';
 import DepartureEDLWizard from '@/components/reservations/DepartureEDLWizard';
+import EnhancedEDLWizard from '@/components/reservations/EnhancedEDLWizard';
 import { EDLData } from '@/services/edlValidation';
 import { useNotificationContext } from '@/contexts/NotificationContext';
+import ClientCard from '@/components/cards/ClientCard';
+import VehicleCard from '@/components/cards/VehicleCard';
+import DateCard from '@/components/cards/DateCard';
 
 // Helper function to convert URI to Blob
 const uriToBlob = async (uri: string): Promise<Blob> => {
@@ -85,7 +89,13 @@ export default function EtatLieuxDepartScreen() {
       // Upload all photos and video
       const uploadedPhotos: any = {};
       for (const [key, uri] of Object.entries(edlData.photos)) {
-        if (uri) {
+        if (Array.isArray(uri)) {
+          // Si c'est un tableau, on upload chaque URI et on stocke le résultat dans un tableau
+          uploadedPhotos[key] = await Promise.all(
+            uri.map(u => u ? uploadFileIfNeeded(u, 'photo', key) : u)
+          );
+        } else if (uri) {
+          // Si c'est une chaîne, on upload normalement
           uploadedPhotos[key] = await uploadFileIfNeeded(uri, 'photo', key);
         }
       }
@@ -151,54 +161,56 @@ export default function EtatLieuxDepartScreen() {
     });
   };
 
-  const renderClientInfo = () => ( 
+  const renderClientInfo = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Client</Text>
-      <View style={styles.infoCard}>
-        <View style={styles.infoRow}>
-          <User size={16} color={colors.primary} />
-          <Text style={styles.infoLabel}>Nom:</Text>
-          <Text style={styles.infoValue}>{client?.nom} {client?.prenom}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <FileText size={16} color={colors.primary} />
-          <Text style={styles.infoLabel}>Réservation:</Text>
-          <Text style={styles.infoValue}>#{reservation?.id.slice(-8)}</Text>
-        </View>
-      </View>
+      <ClientCard
+        nom={client?.nom || ''}
+        prenom={client?.prenom || ''}
+        telephone={client?.telephone}
+        reservationId={reservation?.id}
+        permisUrl={client?.permisConduire}
+        cniUrl={client?.carteIdentite}
+      />
     </View>
   );
 
-  const renderVehicleInfo = () => ( 
+  const renderVehicleInfo = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Véhicule</Text>
-      <View style={styles.infoCard}>
-        <View style={styles.infoRow}>
-          <Car size={16} color={colors.primary} />
-          <Text style={styles.infoLabel}>Véhicule:</Text>
-          <Text style={styles.infoValue}>{vehicle?.marque} {vehicle?.modele}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <FileText size={16} color={colors.primary} />
-          <Text style={styles.infoLabel}>Immatriculation:</Text>
-          <Text style={styles.infoValue}>{vehicle?.immatriculation}</Text>
-        </View>
-      </View>
+      <VehicleCard
+        marque={vehicle?.marque || ''}
+        modele={vehicle?.modele || ''}
+        immatriculation={vehicle?.immatriculation || ''}
+        photoUrl={vehicle?.photo}
+        carburant={vehicle?.carburant || ''}
+        kilometrageJournalier={vehicle?.kilometrageJournalier}
+        statut={vehicle?.statut || ''}
+      />
     </View>
   );
 
-  const renderDateTimeInfo = () => ( 
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Date et heure</Text>
-      <View style={styles.infoCard}>
-        <View style={styles.infoRow}>
-          <Clock size={16} color={colors.primary} />
-          <Text style={styles.infoLabel}>Date:</Text>
-          <Text style={styles.infoValue}>{formatDateTime()}</Text>
-        </View>
+  const renderDateTimeInfo = () => {
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('fr-FR');
+    const currentTime = now.toLocaleTimeString('fr-FR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Date et heure de départ</Text>
+        <DateCard
+          date={currentDate}
+          heure={currentTime}
+          subtitle="Date et heure de début de l'état des lieux (automatique)"
+          modifiable={false}
+          iconType="clock"
+        />
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderSignatureModal = () => (
     <Modal
@@ -295,7 +307,7 @@ export default function EtatLieuxDepartScreen() {
 
   if (showWizard) {
     return (
-      <DepartureEDLWizard
+      <EnhancedEDLWizard
         reservationId={reservationId}
         onComplete={handleEDLComplete}
         onCancel={() => setShowWizard(false)}
@@ -579,5 +591,200 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Styles pour la carte véhicule améliorée
+  vehicleCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  vehicleImageContainer: {
+    height: 200,
+    backgroundColor: colors.background,
+  },
+  vehicleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  vehicleImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vehicleImageText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 8,
+  },
+  vehicleInfo: {
+    padding: 20,
+  },
+  vehicleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  vehicleTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    flex: 1,
+  },
+  vehicleBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  vehicleBadgeText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  vehicleDetails: {
+    gap: 12,
+  },
+  vehicleDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vehicleDetailLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 8,
+    marginRight: 10,
+    minWidth: 100,
+  },
+  vehicleDetailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+    flex: 1,
+  },
+  // Styles pour la carte client améliorée
+  clientCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  clientHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  clientAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  clientInfo: {
+    flex: 1,
+  },
+  clientName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  clientSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  reservationBadge: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  reservationBadgeText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  clientDetails: {
+    gap: 12,
+  },
+  clientDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clientDetailLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 8,
+    marginRight: 10,
+    minWidth: 80,
+  },
+  clientDetailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+    flex: 1,
+  },
+  // Styles pour la carte réservation améliorée
+  reservationCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reservationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  reservationIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.accent + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 15,
+  },
+  reservationInfo: {
+    flex: 1,
+  },
+  reservationTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  reservationSubtitle: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  reservationDetails: {
+    gap: 12,
+  },
+  reservationDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reservationDetailLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 8,
+    marginRight: 10,
+    minWidth: 100,
+  },
+  reservationDetailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+    flex: 1,
   },
 });

@@ -59,7 +59,7 @@ export default function ClientsScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [80, 180], // Collapsed height vs full height
+    outputRange: [60, 160], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -115,72 +115,72 @@ export default function ClientsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View 
-        style={[styles.header, { height: filterSectionHeight }]}
-        {...panResponder.panHandlers}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>Clients</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.collapseButton}
-                onPress={isFilterCollapsed ? expandFilter : collapseFilter}
-              >
-                {isFilterCollapsed ? (
-                  <ChevronDown size={20} color={colors.text} />
-                ) : (
-                  <ChevronUp size={20} color={colors.text} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => router.push('/clients/add')}
-              >
-                <Plus size={24} color={colors.background} />
-              </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.View 
+          style={[styles.header, { height: filterSectionHeight }]}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>Clients</Text>
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  style={styles.collapseButton}
+                  onPress={isFilterCollapsed ? expandFilter : collapseFilter}
+                >
+                  {isFilterCollapsed ? (
+                    <ChevronDown size={20} color={colors.text} />
+                  ) : (
+                    <ChevronUp size={20} color={colors.text} />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={() => router.push('/clients/add')}
+                >
+                  <Plus size={24} color={colors.background} />
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Animated content that will collapse/expand */}
+            <Animated.View style={[
+              styles.collapsibleContent,
+              { opacity: filterHeight }
+            ]}>
+              {/* Barre de recherche */}
+              <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par nom, email ou téléphone..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Always visible search bar when collapsed */}
+            {isFilterCollapsed && (
+              <View style={styles.collapsedSearchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par nom, email ou téléphone..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
+            )}
           </View>
+        </Animated.View>
 
-          {/* Animated content that will collapse/expand */}
-          <Animated.View pointerEvents={isFilterCollapsed ? 'none' : 'auto'} style={[
-            styles.collapsibleContent,
-            { opacity: filterHeight }
-          ]}>
-            {/* Barre de recherche */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par nom, email ou téléphone..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-            </View>
-          </Animated.View>
-
-          {/* Always visible search bar when collapsed */}
-          {isFilterCollapsed && (
-            <View style={styles.collapsedSearchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par nom, email ou téléphone..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-            </View>
-          )}
-        </View>
-      </Animated.View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
         {filteredClients.length === 0 ? (
           <View style={styles.emptyState}>
             <Users size={64} color={colors.textSecondary} />
@@ -232,13 +232,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
-  header: {
-    backgroundColor: colors.surface,
-    paddingTop: 16,
-    borderBottomColor: colors.border + '60', 
-    overflow: 'hidden',
-  },
+  headerSafe: { backgroundColor: colors.background },
+  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
   headerContent: {
     flex: 1,
   },
@@ -250,13 +247,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    zIndex: 10, // Ensure buttons stay on top
+    marginBottom: 16,
   },
   collapsedSearchContainer: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 12,
     zIndex: 10,
   },
   headerActions: {
@@ -274,11 +270,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
-  },
+  title: { fontSize: 28, fontWeight: '800', color: colors.text, marginTop: 0 },
   addButton: {
     backgroundColor: colors.primary,
     width: 48,
@@ -344,4 +336,5 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 20,
     gap: 16,
   },
+  scrollContent: { paddingBottom: 100, paddingTop: 8 },
 });

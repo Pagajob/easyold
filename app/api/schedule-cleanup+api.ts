@@ -1,13 +1,14 @@
 export async function POST(request: Request) {
   try {
     // Appeler l'API de nettoyage des fichiers
-    const cleanupUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}/api/clean-files`
-      : process.env.EXPO_PUBLIC_API_URL
-        ? `${process.env.EXPO_PUBLIC_API_URL}/api/clean-files`
-        : 'https://easygarage-app.vercel.app/api/clean-files';
+    const apiUrl =
+      (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? `${window.location.origin}/api/clean-files`
+        : process.env.EXPO_PUBLIC_API_URL
+          ? `${process.env.EXPO_PUBLIC_API_URL}/api/clean-files`
+          : 'https://easygarage-app.vercel.app/api/clean-files';
     
-    const response = await fetch(cleanupUrl, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

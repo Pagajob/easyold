@@ -24,11 +24,16 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/config/firebase';
 import { collection, query, where, getDocs, updateDoc, Timestamp, getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 export interface UserProfile {
   uid: string;
   email: string;
   name?: string;
+  prenom?: string;
+  nom?: string;
+  telephone?: string;
+  profilePicture?: string;
   createdAt: string;
   isEmailVerified: boolean;
   role?: string;
@@ -49,7 +54,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   updateUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateUserEmail: (currentPassword: string, newEmail: string) => Promise<void>;
-  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateUserProfile?: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,29 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state from persistent storage
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Vérifier si nous avons une session stockée
-        const storedUser = await AsyncStorage.getItem('auth_user');
-        
-        if (storedUser) {
-          // Si nous avons un utilisateur stocké, initialiser l'état d'authentification
-          const parsedUser = JSON.parse(storedUser);
-          
-          // Nous ne définissons pas directement l'état de l'utilisateur à partir du stockage
-          // Firebase Auth's onAuthStateChanged s'en chargera
-          // Cela garantit que nous avons un token valide et non expiré
-          
-          console.log('Session d\'authentification trouvée, attente de l\'initialisation de Firebase Auth');
-        }
-      } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'authentification depuis le stockage:', error);
-      } finally {
-        setAuthInitialized(true);
-      }
-    };
-    
-    initializeAuth();
+    setAuthInitialized(true);
   }, []);
 
   useEffect(() => {
@@ -93,19 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       
       if (user) {
-        // Stocker l'état d'authentification de l'utilisateur dans AsyncStorage pour la persistance
-        try {
-          // Nous ne stockons que les informations minimales nécessaires pour restaurer la session
-          const userToStore = {
-            uid: user.uid,
-            email: user.email,
-            emailVerified: user.emailVerified,
-          };
-          await AsyncStorage.setItem('auth_user', JSON.stringify(userToStore));
-        } catch (error) {
-          console.error('Erreur lors du stockage de l\'état d\'authentification:', error);
-        }
-        
         // Charger le profil utilisateur depuis Firestore ou le créer s'il n'existe pas
         await refreshUser();
         try {
@@ -124,17 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await setDoc(doc(db, 'users', user.uid), profile);
             setUserProfile(profile);
           }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
+        } catch (error: any) {
+          if (error && error.message && error.message.includes('client is offline')) {
+            // Mode hors-ligne : conserver le dernier profil connu
+            console.warn('Firestore hors-ligne : données utilisateur non rafraîchies, utilisation du cache local.');
+            // Optionnel : afficher une notification ou un toast ici
+          } else {
+            console.error('Error loading user profile:', error);
+            setUserProfile(null);
+          }
         }
       } else {
         setUserProfile(null);
-        // Effacer l'état d'authentification stocké lorsque l'utilisateur est null
-        try {
-          await AsyncStorage.removeItem('auth_user');
-        } catch (error) {
-          console.error('Error removing auth state:', error);
-        }
       }
       
       setLoading(false);
@@ -142,6 +113,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return unsubscribe;
   }, [authInitialized]);
+
+  // Après avoir chargé le userProfile dans AuthContext
+  useEffect(() => {
+    if (user && userProfile && (!userProfile.prenom || !userProfile.nom || !userProfile.telephone)) {
+      // Rediriger vers l'onboarding profil utilisateur
+      router.replace('/onboarding-profile');
+    }
+  }, [user, userProfile]);
 
   // Configurer la persistance de l'authentification
   const configurePersistence = async () => {
@@ -156,92 +135,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Sur mobile, la persistance est activée par défaut
   };
 
-  const signIn = async (email: string, password: string): Promise<UserCredential> => {
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
       // Configurer la persistance avant la connexion
       await configurePersistence();
       
       // Tenter de se connecter
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
 
       // Stocker l'email pour la fonctionnalité "Se souvenir de moi"
       try {
-        if (userCredential.user) {
+        if (user) {
           await AsyncStorage.setItem('auth_last_email', email);
         }
       } catch (error) {
         console.error('Erreur lors du stockage de l\'email:', error);
       }
       
-      return userCredential;
     } catch (error: any) {
       throw new Error(getAuthErrorMessage(error.code));
     }
   };
 
-  const signInWithApple = async () => {
+  const signInWithApple = async (): Promise<void> => {
     try {
-      // Vérifier si l'authentification Apple est disponible sur cet appareil
       if (Platform.OS === 'web') {
         throw new Error('Sign in with Apple is not available on web');
       }
-
-      // Request Apple authentication
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME, 
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-
-      // If we got a credential, sign in to Firebase with it
       if (credential) {
-        // Create a Firebase credential from the Apple credential
         const { OAuthProvider } = await import('firebase/auth'); 
         const provider = new OAuthProvider('apple.com');
-        
-        // Create a credential for Firebase using the token from Apple
         const authCredential = provider.credential({
           idToken: credential.identityToken || '',
-          rawNonce: credential.nonce,
+          // rawNonce: credential.nonce, // à activer si tu gères le nonce
         });
-        
-        // Sign in to Firebase with the credential
-        const userCredential = await signInWithCredential(auth, authCredential);
-        const firebaseUser = userCredential.user;
-
-        // Check if this is a new user
-        const isNewUser = userCredential.additionalUserInfo?.isNewUser;
-
-        // Si c'est un nouvel utilisateur, créer un profil
-        if (isNewUser) {
-          // Create a user profile in Firestore
-          const profile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            name: credential.fullName?.givenName || '',
-            createdAt: new Date().toISOString(),
-            isEmailVerified: true,
-            role: 'user',
-          };
-
-          await setDoc(doc(db, 'users', firebaseUser.uid), profile);
-        }
-
-        // Configurer la persistance
-        await configurePersistence();
-        
-        return userCredential;
+        await signInWithCredential(auth, authCredential);
+        // Le profil utilisateur sera complété via l'onboarding
       }
+      await configurePersistence();
     } catch (error: any) {
-      // Handle Apple authentication errors
-      if (error.code === 'ERR_CANCELED' || error.code === 'ERR_REQUEST_CANCELED' || error.message === 'Sign in was canceled') {
-        // User canceled the sign-in flow
-        throw new Error('Sign in was canceled');
-      }
-      
-      console.error('Apple authentication error:', error);
-      throw new Error(error.message || 'Failed to authenticate with Apple');
+      throw new Error(getAuthErrorMessage(error.code));
     }
   };
 
@@ -315,7 +254,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await signOut(auth); 
       // Clear stored auth state
-      await AsyncStorage.removeItem('auth_user');
       setUser(null);
       setUserProfile(null);
     } catch (error: any) {

@@ -536,7 +536,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12
+    borderRadius: 28
   },
   deleteButtonText: {
     fontSize: 16,
@@ -550,7 +550,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 28,
     gap: 8
   },
   costsButtonText: {
@@ -564,7 +564,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 28,
     gap: 8,
   },
   editButtonText: {

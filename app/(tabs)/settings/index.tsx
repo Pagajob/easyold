@@ -12,7 +12,7 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
-import { Palette, Moon, Sun, Download, FileText, TrendingUp, Users, Plus, UserPlus, User, LogOut, ChevronRight, ChartBar as BarChart } from 'lucide-react-native';
+import { Palette, Moon, Sun, Download, FileText, TrendingUp, Users, Plus, UserPlus, User, LogOut, ChevronRight, ChartBar as BarChart, Check } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CompanyInfoForm from '@/components/settings/CompanyInfoForm';
@@ -378,14 +378,15 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.headerSafe, { backgroundColor: colors.background }]}> 
+        <View style={styles.header}>
+          <Text style={styles.title}>Réglages</Text>
+        </View>
+      </SafeAreaView>
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Réglages</Text>
-        </View>
-
         <View style={styles.formContainer}>
           <CompanyInfoForm />
         </View>
@@ -454,13 +455,16 @@ export default function SettingsScreen() {
                 style={[
                   styles.colorOption,
                   { backgroundColor: preset.color },
-                  colors.primary === preset.color &&
-                    styles.colorOptionSelected,
+                  colors.primary === preset.color && {
+                    borderWidth: 3,
+                    borderColor: '#222',
+                    overflow: 'hidden',
+                  },
                 ]}
                 onPress={() => handleColorChange(preset.color)}
               >
                 {colors.primary === preset.color && (
-                  <View style={styles.colorCheckmark} />
+                  <Check size={20} color="#fff" />
                 )}
               </TouchableOpacity>
             ))}
@@ -532,7 +536,7 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <View style={[styles.userCard, { marginTop: 16 }]}>
+          <View style={[styles.userCard, { marginTop: 16 }]}> 
             <View style={styles.userInfo}>
               <Text style={styles.settingTitle}>Informations utilisateur</Text>
               <Text style={styles.settingSubtitle}>Email: {user?.email}</Text>
@@ -546,18 +550,13 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
-        </View>
-      </ScrollView>
-      
-      {/* Fixed footer with logout button */}
-      <SafeAreaView style={styles.footer} edges={['bottom']}>
-        <View style={styles.footerContent}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+
+          <TouchableOpacity style={[styles.logoutButton, { marginTop: 24 }]} onPress={handleLogoutPress}>
             <LogOut size={20} color={colors.background} />
             <Text style={styles.logoutButtonText}>Se déconnecter</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </ScrollView>
       
       {/* Logout Confirmation Modal */}
       <Modal
@@ -601,20 +600,26 @@ const createStyles = (colors: any) =>
     container: { 
       flex: 1, 
       backgroundColor: colors.background,
-      position: 'relative'
+      position: 'relative',
+      paddingTop: 0,
     },
-    scrollContent: {
-      paddingBottom: 100,
-      paddingTop: 16,
+    headerSafe: {
+      backgroundColor: colors.background,
     },
     header: { 
-      padding: 24, 
-      paddingBottom: 16 
+      paddingTop: Platform.OS === 'ios' ? 8 : 12,
+      paddingBottom: 12,
+      paddingHorizontal: 24,
     },
     title: { 
       fontSize: 28, 
       fontWeight: '800', 
-      color: colors.text 
+      color: colors.text,
+      marginTop: 0,
+    },
+    scrollContent: {
+      paddingBottom: 100,
+      paddingTop: 8,
     },
     formContainer: {
       marginHorizontal: 16,

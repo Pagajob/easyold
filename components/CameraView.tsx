@@ -295,7 +295,7 @@ export default function CameraViewComponent({ visible, mode, onCapture, onClose 
             <Text style={styles.errorText}>
               La caméra n'est pas disponible sur cette plateforme ou dans cet environnement.
             </Text>
-            <TouchableOpacity
+            <TouchableOpacity 
               style={styles.simulateButton}
               onPress={() => {
                 const simulatedUri = mode === 'photo' 
@@ -313,7 +313,7 @@ export default function CameraViewComponent({ visible, mode, onCapture, onClose 
       </Modal>
     );
   }
-
+  
   return (
     <Modal
       visible={visible}
@@ -321,18 +321,18 @@ export default function CameraViewComponent({ visible, mode, onCapture, onClose 
       presentationStyle="fullScreen"
     >
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+          <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <ArrowLeft size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.title}>
+              <ArrowLeft size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.title}>
             {mode === 'photo' ? 'Appareil photo' : 'Caméra vidéo'}
-          </Text>
+            </Text>
           <TouchableOpacity onPress={toggleCameraType} style={styles.switchButton}>
-            <RefreshCw size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-
+              <RefreshCw size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+          
         <View style={styles.cameraContainer}>
           <ExpoCameraView
             ref={cameraRef}
@@ -383,7 +383,7 @@ export default function CameraViewComponent({ visible, mode, onCapture, onClose 
             </View>
           )}
           
-          <TouchableOpacity
+              <TouchableOpacity 
             style={[
               styles.captureButton,
               isRecording && styles.recordingButton,
@@ -391,16 +391,16 @@ export default function CameraViewComponent({ visible, mode, onCapture, onClose 
             ]}
             onPress={mode === 'photo' ? takePicture : toggleRecording}
             disabled={isSaving || hasError}
-          >
+              >
             {isSaving ? (
               <ActivityIndicator color="white" />
             ) : isRecording ? (
               <StopCircle size={32} color="white" />
-            ) : (
+                ) : (
               <View style={styles.captureButtonInner} />
-            )}
-          </TouchableOpacity>
-        </View>
+                )}
+              </TouchableOpacity>
+            </View>
       </SafeAreaView>
     </Modal>
   );

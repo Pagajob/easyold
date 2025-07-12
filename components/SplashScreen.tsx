@@ -31,8 +31,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const glowOpacity = useSharedValue(0);
   const logoRotation = useSharedValue(0);
   const textOpacity = useSharedValue(0);
-  const textProgress = useSharedValue(0);
-  const cursorOpacity = useSharedValue(0);
   const backgroundOpacity = useSharedValue(0);
   const skipButtonOpacity = useSharedValue(0);
   
@@ -40,8 +38,11 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const animationFinished = useRef(false);
 
   const slogan = "Votre gestion de flotte simplifiée";
-  const [displayedText, setDisplayedText] = React.useState('');
-  const [showCursor, setShowCursor] = React.useState(false);
+  const sloganWords = slogan.split(' ');
+  // Un tableau de sharedValues pour chaque mot
+  const wordOpacities = sloganWords.map(() => useSharedValue(0));
+  const wordScales = sloganWords.map(() => useSharedValue(0.7));
+  const wordTranslates = sloganWords.map(() => useSharedValue(30)); // 30px en dessous
 
   // Background animation
   const backgroundStyle = useAnimatedStyle(() => ({
@@ -70,15 +71,26 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     opacity: textOpacity.value,
   }));
 
-  // Cursor animation
-  const cursorStyle = useAnimatedStyle(() => ({
-    opacity: cursorOpacity.value,
-  }));
-
   // Skip button animation
   const skipButtonStyle = useAnimatedStyle(() => ({
     opacity: skipButtonOpacity.value,
   }));
+
+  // Slogan animation (mot par mot, slide up)
+  const animatedSlogan = sloganWords.map((word, i) => {
+    const style = useAnimatedStyle(() => ({
+      opacity: wordOpacities[i].value,
+      transform: [
+        { scale: wordScales[i].value },
+        { translateY: wordTranslates[i].value },
+      ],
+    }));
+    return (
+      <Animated.Text key={i} style={[styles.sloganWord, style]}>
+        {word + (i < sloganWords.length - 1 ? ' ' : '')}
+      </Animated.Text>
+    );
+  });
 
   const startAnimation = () => {
     // 1. Background fade in (0-800ms)
@@ -107,33 +119,19 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       );
     }, 800);
 
-    // 4. Text animation (1400-2400ms)
+    // 4. App name fade in (1400-1800ms)
     setTimeout(() => {
       textOpacity.value = withTiming(1, { duration: 400 });
     }, 1400);
 
-    // 5. Typewriter effect (1400-3500ms)
-    setTimeout(() => {
-      let currentIndex = 0;
-      const typewriterInterval = setInterval(() => {
-        if (currentIndex <= slogan.length) {
-          setDisplayedText(slogan.slice(0, currentIndex));
-          currentIndex++;
-        } else {
-          clearInterval(typewriterInterval);
-          // Start cursor blinking
-          cursorOpacity.value = withRepeat(
-            withSequence(
-              withTiming(1, { duration: 500 }),
-              withTiming(0, { duration: 500 })
-            ),
-            -1,
-            true
-          );
-          setShowCursor(true);
-        }
-      }, 30); // vitesse accélérée
-    }, 1400);
+    // 5. Slogan mot par mot (1600ms+)
+    sloganWords.forEach((_, i) => {
+      setTimeout(() => {
+        wordOpacities[i].value = withTiming(1, { duration: 350 });
+        wordTranslates[i].value = withSpring(0, { damping: 7, stiffness: 120 });
+        wordScales[i].value = withSpring(1, { damping: 7, stiffness: 120 });
+      }, 1600 + i * 180);
+    });
 
     // 6.5. Rotation du logo (3000ms)
     setTimeout(() => {
@@ -149,10 +147,9 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       skipButtonOpacity.value = withTiming(1, { duration: 300 });
     }, 1500);
 
-    // 7. Auto finish (3500ms)
+    // 7. Auto finish (3800ms)
     setTimeout(() => {
       if (!animationFinished.current) {
-        // Délai supplémentaire pour permettre à la rotation de se terminer
         setTimeout(() => {
           finishAnimation();
         }, 500);
@@ -169,7 +166,6 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     textOpacity.value = withTiming(0, { duration: 300 });
     glowOpacity.value = withTiming(0, { duration: 200 });
     logoRotation.value = withTiming(720, { duration: 500 });
-    cursorOpacity.value = withTiming(0, { duration: 200 });
     skipButtonOpacity.value = withTiming(0, { duration: 200 });
     
     // Call onFinish after fade out
@@ -191,7 +187,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <View style={styles.container}>
       {/* Background gradient */}
-      <Animated.View style={[styles.background, backgroundStyle]}>
+      <Animated.View style={[styles.background, backgroundOpacity.value ? { opacity: backgroundOpacity.value } : {}]}>
         <LinearGradient
           colors={['#8B5CF6', '#EC4899']}
           style={styles.gradient}
@@ -217,15 +213,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
         EasyGarage
       </Animated.Text>
 
-      {/* Slogan with typewriter effect */}
-      <Animated.View style={[styles.sloganContainer, textStyle]}>
-        <Text style={styles.sloganText}>
-          {displayedText}
-          <Animated.Text style={[styles.cursor, cursorStyle]}>
-            {showCursor ? '|' : ''}
-          </Animated.Text>
-        </Text>
-      </Animated.View>
+      {/* Slogan mot par mot */}
+      <View style={styles.sloganContainer}>
+        {animatedSlogan}
+      </View>
 
       {/* Skip button */}
       <Animated.View style={[styles.skipContainer, skipButtonStyle]}>
@@ -246,6 +237,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent', // S'assurer qu'il n'y a pas de fond blanc
   },
   background: {
     position: 'absolute',
@@ -253,9 +245,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: -1, // Toujours en arrière-plan
   },
   gradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   logoContainer: {
     position: 'relative',
@@ -297,16 +292,21 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   sloganContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
     minHeight: 30,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  sloganText: {
+  sloganWord: {
     fontSize: 18,
     color: 'white',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    marginRight: 4,
+    fontWeight: '600',
   },
   cursor: {
     fontWeight: 'bold',

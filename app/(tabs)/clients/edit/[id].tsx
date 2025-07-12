@@ -43,6 +43,8 @@ export default function EditClientScreen() {
     }
   }, [client]);
 
+  const styles = createStyles(colors);
+
   if (!client) {
     return (
       <SafeAreaView style={styles.container}>
@@ -117,8 +119,6 @@ export default function EditClientScreen() {
     }
   };
 
-  const styles = createStyles(colors);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -139,7 +139,7 @@ export default function EditClientScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>👤 Informations personnelles</Text>
 
-          {['prenom', 'nom', 'telephone', 'email'].map(field => (
+          {(['prenom', 'nom', 'telephone', 'email'] as const).map(field => (
             <View style={styles.inputGroup} key={field}>
               <Text style={styles.label}>{field === 'prenom' ? 'Prénom *' : field === 'nom' ? 'Nom *' : field.charAt(0).toUpperCase() + field.slice(1)}</Text>
               <TextInput
@@ -156,7 +156,7 @@ export default function EditClientScreen() {
 
           <AddressAutocomplete
             value={formData.adresse}
-            onAddressSelect={handleAddressSelect}
+            onAddressSelect={adresse => setFormData(prev => ({ ...prev, adresse }))}
             label="📍 Adresse complète"
             placeholder="Commencez à taper votre adresse..."
           />
@@ -165,7 +165,7 @@ export default function EditClientScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📎 Documents</Text>
 
-          {['permisConduire', 'carteIdentite'].map(type => (
+          {(['permisConduire', 'carteIdentite'] as const).map(type => (
             <View style={styles.inputGroup} key={type}>
               <Text style={styles.label}>{type === 'permisConduire' ? 'Permis de conduire' : "Carte d'identité"}</Text>
               <TouchableOpacity
@@ -177,7 +177,7 @@ export default function EditClientScreen() {
                   {formData[type] ? 'Document modifié' : 'Modifier'}
                 </Text>
               </TouchableOpacity>
-              {client[type] && !formData[type] && (
+              {client[type as keyof Client] && !formData[type] && (
                 <Text style={styles.currentDocumentText}>Document actuel conservé</Text>
               )}
             </View>

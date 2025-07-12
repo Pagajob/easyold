@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
 import { ArrowLeft, Save, Upload } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useData, Client } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
@@ -12,6 +13,7 @@ import { ClientService } from '@/services/firebaseService';
 export default function AddClientScreen() {
   const { colors } = useTheme();
   const { addClient } = useData();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -63,6 +65,7 @@ export default function AddClientScreen() {
 
     try {
       const clientData: Omit<Client, 'id'> = {
+        userId: user?.uid || '',
         prenom: formData.prenom,
         nom: formData.nom,
         telephone: formData.telephone,
@@ -168,7 +171,7 @@ export default function AddClientScreen() {
 
           <AddressAutocomplete
             value={formData.adresse}
-            onAddressSelect={handleAddressSelect}
+            onAddressSelect={adresse => setFormData(prev => ({ ...prev, adresse }))}
             label="📍 Adresse complète"
             placeholder="Commencez à taper votre adresse..."
           />

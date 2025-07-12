@@ -124,12 +124,8 @@ export default function CompanyInfoForm() {
         <TouchableOpacity onPress={pickLogo} style={styles.logoContainer}>
           {localCompanyInfo.logo ? (
             <Image source={{ uri: localCompanyInfo.logo }} style={styles.logoImage} />
-          ) : defaultLogo ? (
-            <Image source={{ uri: defaultLogo }} style={styles.logoImage} />
           ) : (
-            <View style={styles.logoPlaceholder}>
-              <Camera size={20} color={colors.textSecondary} />
-            </View>
+            <Image source={require('@/assets/images/easygarage-icon.png')} style={styles.logoImage} />
           )}
         </TouchableOpacity>
       </View>
@@ -166,7 +162,7 @@ export default function CompanyInfoForm() {
       {/* Adresse du siège avec autocomplétion */}
       <AddressAutocomplete
         value={localCompanyInfo.adresse}
-        onAddressSelect={handleAddressSelect}
+        onAddressSelect={adresse => handleChange('adresse', adresse)}
         label="📍 Adresse du siège social"
         placeholder="Commencez à taper votre adresse..."
       />

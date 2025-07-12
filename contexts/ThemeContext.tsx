@@ -41,17 +41,17 @@ const lightColors: ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-  primary: '#0A84FF',
-  primaryDark: '#0A84FF',
-  secondary: '#8E8E93',
+  primary: '#2563EB', // Bleu profond
+  primaryDark: '#1A4CB8',
+  secondary: '#A0A4B8',
   accent: '#30D158',
-  background: '#000000',
-  surface: '#1C1C1E',
-  text: '#FFFFFF',
-  textSecondary: '#8E8E93',
-  border: '#38383A',
+  background: '#181A20', // Fond général très sombre
+  surface: '#23262F',   // Cartes, modals, inputs
+  text: '#F5F6FA',      // Texte principal très clair
+  textSecondary: '#A0A4B8', // Texte secondaire gris bleuté
+  border: '#23262F',    // Bordures discrètes
   success: '#30D158',
-  warning: '#FF9F0A',
+  warning: '#FFD60A',
   error: '#FF453A',
   info: '#64D2FF',
 };

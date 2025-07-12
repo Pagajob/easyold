@@ -1,16 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Car, Users, Calendar, ChartBar as BarChart3, Settings } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Platform, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
   const { colors } = useTheme();
   const isIOS = Platform.OS === 'ios';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <StatusBar barStyle={colors.background === '#FFFFFF' ? 'dark-content' : 'light-content'} />
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -77,6 +74,5 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    </SafeAreaView>
   );
 }

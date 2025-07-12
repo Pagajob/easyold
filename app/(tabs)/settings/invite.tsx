@@ -125,18 +125,17 @@ export default function InviteUserScreen() {
   const sendInvitationEmail = async (email: string, token: string, companyName: string, userId: string) => {
     try {
       // Get the base URL for the app
-      const baseUrl = Platform.OS === 'web' 
-        ? window.location.origin 
-        : 'https://easygarage-app.vercel.app'; // Replace with your production URL
+      const baseUrl =
+        (typeof window !== 'undefined' && window.location && window.location.origin)
+          ? window.location.origin
+          : process.env.EXPO_PUBLIC_API_URL
+            ? process.env.EXPO_PUBLIC_API_URL
+            : 'https://easygarage-app.vercel.app';
       
       const inviteUrl = `${baseUrl}/register?token=${token}`;
       
       // Use the send-email API route
-      const apiUrl = Platform.OS === 'web'
-        ? `${window.location.origin}/api/send-email`
-        : process.env.EXPO_PUBLIC_API_URL 
-          ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email` 
-          : 'https://easygarage-app.vercel.app/api/send-email';
+      const apiUrl = `${baseUrl}/api/send-email`;
       
       const response = await fetch(apiUrl, {
         method: 'POST',

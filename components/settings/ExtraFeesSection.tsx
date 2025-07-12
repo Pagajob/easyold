@@ -158,9 +158,6 @@ export default function ExtraFeesSection() {
             <View style={styles.feeDetails}>
               <View style={styles.feeLabelContainer}>
                 <Text style={styles.feeLabel}>{fee.label}</Text>
-                {fee.unit && (
-                  <Text style={styles.feeUnit}>{fee.unit}</Text>
-                )}
               </View>
               <View style={styles.priceInputContainer}>
                 <TextInput
@@ -170,6 +167,9 @@ export default function ExtraFeesSection() {
                   keyboardType="numeric"
                   placeholder="0"
                 />
+                {fee.unit && (
+                  <Text style={styles.feeUnit}>{fee.unit}</Text>
+                )}
                 <Text style={styles.currencySymbol}>€</Text>
               </View>
             </View>

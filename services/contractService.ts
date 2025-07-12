@@ -220,9 +220,12 @@ startxref
   ): Promise<boolean> {
     try {
       // Use absolute URL for API calls
-      const apiUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/send-email`
-        : process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email` : 'https://tajirent-app.vercel.app/api/send-email';
+      const apiUrl =
+        (typeof window !== 'undefined' && window.location && window.location.origin)
+          ? `${window.location.origin}/api/send-email`
+          : process.env.EXPO_PUBLIC_API_URL
+            ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email`
+            : 'https://easygarage-app.vercel.app/api/send-email';
       
       const response = await fetch(apiUrl, {
         method: 'POST',

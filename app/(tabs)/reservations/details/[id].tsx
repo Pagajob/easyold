@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image, Linking, Modal, TextInput, Platform } from 'react-native';
-import { ArrowLeft, Car, User, Calendar, Clock, FileText, Phone, Mail, DollarSign, CreditCard as Edit, Trash2, Download } from 'lucide-react-native';
+import { ArrowLeft, Car, User, Calendar, Clock, FileText, Phone, Mail, DollarSign, CreditCard as Edit, Trash2, Download, Pencil } from 'lucide-react-native';
 import { useData } from '@/contexts/DataContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useContracts } from '@/hooks/useContracts';
@@ -11,6 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import EDLRetourModal from '@/components/reservations/EDLRetourModal';
+import EnhancedEDLRetourModal from '@/components/reservations/EnhancedEDLRetourModal';
+import EDLHistoryView from '@/components/reservations/EDLHistoryView';
+import EditReservationModal from '@/components/reservations/EditReservationModal';
 
 export default function ReservationDetailsScreen() {
   const { colors } = useTheme();
@@ -23,6 +26,7 @@ export default function ReservationDetailsScreen() {
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
   const [contractUrl, setContractUrl] = useState<string | null>(null);
   const [edlRetourModalVisible, setEdlRetourModalVisible] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const reservation = reservations.find(r => r.id === id);
   const vehicle = reservation ? vehicles.find(v => v.id === reservation.vehiculeId) : null;
@@ -71,6 +75,8 @@ export default function ReservationDetailsScreen() {
     return <ErrorMessage message={error} />;
   }
 
+  const styles = createStyles(colors);
+
   if (!reservation || !vehicle || !client) {
     return (
       <SafeAreaView style={styles.container}>
@@ -104,13 +110,14 @@ export default function ReservationDetailsScreen() {
         
         // Ajouter la charge via le service
         try {
-          const apiUrl = typeof window !== 'undefined'
-            ? `${window.location.origin}/api/charges/add`
-            : process.env.EXPO_PUBLIC_API_URL
-              ? `${process.env.EXPO_PUBLIC_API_URL}/api/charges/add`
-              : 'https://easygarage-app.vercel.app/api/charges/add';
+          const apiUrlCharges =
+            (typeof window !== 'undefined' && window.location && window.location.origin)
+              ? `${window.location.origin}/api/charges/add`
+              : process.env.EXPO_PUBLIC_API_URL
+                ? `${process.env.EXPO_PUBLIC_API_URL}/api/charges/add`
+                : 'https://easygarage-app.vercel.app/api/charges/add';
               
-          await fetch(apiUrl, {
+          await fetch(apiUrlCharges, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -169,36 +176,44 @@ export default function ReservationDetailsScreen() {
       );
       return;
     }
-
     setIsGeneratingContract(true);
-    
     try {
       const success = await generateAndSendContract(reservation.id);
-      
       if (success) {
-        // Refresh contract URL
         const contract = await getContractByReservationId(reservation.id);
         if (contract) {
           setContractUrl(contract.contractUrl);
         }
-        
         Alert.alert(
           'Contrat généré',
           `Le contrat a été généré avec succès et envoyé à ${client.email}.`,
           [{ text: 'OK' }]
         );
       } else {
+        // Afficher l'erreur précise si disponible
+        let errorMsg = error || 'Impossible de générer ou d\'envoyer le contrat. Veuillez réessayer.';
         Alert.alert(
           'Erreur',
-          'Impossible de générer ou d\'envoyer le contrat. Veuillez réessayer.',
-          [{ text: 'OK' }]
+          errorMsg,
+          [
+            { text: 'Réessayer', onPress: handleGenerateContract },
+            { text: 'Annuler', style: 'cancel' }
+          ]
         );
       }
     } catch (error) {
+      // Afficher l'erreur précise si disponible
+      let errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes('Réponse inattendue du serveur')) {
+        errorMsg = "Le serveur n'a pas répondu correctement. Veuillez réessayer plus tard ou contacter le support si le problème persiste.";
+      }
       Alert.alert(
         'Erreur',
-        'Une erreur est survenue lors de la génération du contrat.',
-        [{ text: 'OK' }]
+        errorMsg,
+        [
+          { text: 'Réessayer', onPress: handleGenerateContract },
+          { text: 'Annuler', style: 'cancel' }
+        ]
       );
     } finally {
       setIsGeneratingContract(false);
@@ -224,7 +239,7 @@ export default function ReservationDetailsScreen() {
   const handleEDLRetourSave = async (edlData: any) => {
     try {
       const edlRetour = {
-        type: 'Retour',
+        type: 'Retour' as const,
         kmDepart: reservation.edlDepart?.kmDepart || getKmDepart(), // Include departure km in return EDL
         kmRetour: edlData.kmRetour,
         carburantRetour: edlData.carburantRetour,
@@ -291,8 +306,6 @@ export default function ReservationDetailsScreen() {
     return diffDays;
   };
 
-  const styles = createStyles(colors);
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -301,8 +314,14 @@ export default function ReservationDetailsScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Réservation</Text>
         <View style={styles.headerActions}> 
-          <TouchableOpacity style={styles.actionButton} onPress={handleEditReservation}>
-            <Edit size={20} color={colors.primary} />
+          <TouchableOpacity
+            style={[styles.headerIconButton, { marginRight: 12 }]}
+            onPress={() => {
+              if (reservation) setShowEditModal(true);
+              else Alert.alert('Erreur', 'Réservation introuvable');
+            }}
+          >
+            <Pencil size={22} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleDeleteReservation}>
             <Trash2 size={20} color={colors.error} />
@@ -486,50 +505,29 @@ export default function ReservationDetailsScreen() {
           </View>
         )}
 
-        {/* États des lieux */}
+        {/* États des lieux améliorés */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📝 États des lieux</Text>
-          <View style={styles.edlContainer}>
-            <View style={styles.edlItem}>
-              <View style={styles.edlHeader}>
-                <FileText size={20} color={colors.primary} />
-                <Text style={styles.edlTitle}>État des lieux de départ</Text>
-              </View>
-              {reservation.edlDepart ? (
-                <View style={styles.edlStatus}>
-                  <Text style={[styles.edlStatusText, { color: colors.success }]}>
-                    Effectué
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.edlStatus}>
-                  <Text style={[styles.edlStatusText, { color: colors.warning }]}>
-                    En attente
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.edlItem}>
-              <View style={styles.edlHeader}>
-                <FileText size={20} color={colors.accent} />
-                <Text style={styles.edlTitle}>État des lieux de retour</Text>
-              </View>
-              {reservation.edlRetour ? (
-                <View style={styles.edlStatus}>
-                  <Text style={[styles.edlStatusText, { color: colors.success }]}>
-                    Effectué
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.edlStatus}>
-                  <Text style={[styles.edlStatusText, { color: colors.textSecondary }]}>
-                    Non effectué
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
+          <EDLHistoryView
+            reservation={reservation}
+            vehicle={vehicle}
+            client={client}
+            onViewEDL={(type) => {
+              if (type === 'depart') {
+                router.push(`/reservations/edl/${reservation.id}`);
+              } else {
+                setEdlRetourModalVisible(true);
+              }
+            }}
+            onDownloadPDF={(type) => {
+              // Logique pour télécharger le PDF
+              Alert.alert('Téléchargement', `Téléchargement du PDF ${type} en cours...`);
+            }}
+            onShareEDL={(type) => {
+              // Logique pour partager l'EDL
+              Alert.alert('Partage', `Partage de l'EDL ${type} en cours...`);
+            }}
+          />
         </View>
 
         {/* Contrat */}
@@ -638,7 +636,15 @@ export default function ReservationDetailsScreen() {
         </View>
       </Modal>
 
-      <EDLRetourModal
+      {/* Modal d'édition de réservation */}
+      <EditReservationModal
+        visible={showEditModal}
+        reservation={reservation || null}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={() => setShowEditModal(false)}
+      />
+
+      <EnhancedEDLRetourModal
         visible={edlRetourModalVisible}
         reservation={reservation}
         vehicle={vehicle}
@@ -679,6 +685,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     gap: 8,
+  },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionButton: {
     width: 36,

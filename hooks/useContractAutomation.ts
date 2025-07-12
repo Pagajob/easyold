@@ -42,9 +42,12 @@ export function useContractAutomation() {
       console.log(`Generating contract for reservation ${reservationId}...`);
       
       // Use absolute URL for API calls
-      const apiUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/api/contracts/generate` 
-        : process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/contracts/generate` : 'https://tajirent-app.vercel.app/api/contracts/generate';
+      const apiUrl =
+        (typeof window !== 'undefined' && window.location && window.location.origin)
+          ? `${window.location.origin}/api/contracts/generate`
+          : process.env.EXPO_PUBLIC_API_URL
+            ? `${process.env.EXPO_PUBLIC_API_URL}/api/contracts/generate`
+            : 'https://easygarage-app.vercel.app/api/contracts/generate';
       
       // Call the API route to generate contract
       const response = await fetch(apiUrl, {
@@ -58,19 +61,29 @@ export function useContractAutomation() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate contract');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate contract');
+        } else {
+          const errorText = await response.text();
+          throw new Error('Réponse inattendue du serveur: ' + errorText);
+        }
       }
 
-      const result = await response.json();
-      
-      // Update reservation with contract URL
-      await updateReservation(reservationId, {
-        contratGenere: result.contractUrl
-      });
-
-      console.log(`Contract generated successfully for reservation ${reservationId}`);
-      return true;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const result = await response.json();
+        // Update reservation with contract URL
+        await updateReservation(reservationId, {
+          contratGenere: result.contractUrl
+        });
+        console.log(`Contract generated successfully for reservation ${reservationId}`);
+        return true;
+      } else {
+        const errorText = await response.text();
+        throw new Error('Réponse inattendue du serveur: ' + errorText);
+      }
     } catch (error) {
       console.error(`Error generating contract for reservation ${reservationId}:`, error);
       setErrors(prev => ({

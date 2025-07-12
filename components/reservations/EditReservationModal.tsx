@@ -86,7 +86,8 @@ export default function EditReservationModal({
         heureRetourPrevue: reservation.heureRetourPrevue,
         statut: reservation.statut,
         montantLocation: reservation.montantLocation,
-        notes: reservation.notes || ''
+        notes: reservation.notes || '',
+        kilometrageInclus: reservation.kilometrageInclus || 0
       });
       
       // Trouver le véhicule et le client sélectionnés
@@ -598,36 +599,70 @@ export default function EditReservationModal({
               {/* Informations véhicule */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Véhicule</Text>
-                <View style={styles.infoCard}>
-                  <View style={styles.infoIcon}>
-                    <Car size={20} color={colors.primary} />
-                  </View>
-                  <View style={styles.infoDetails}>
-                    <Text style={styles.infoTitle}>
-                      {selectedVehicle ? `${selectedVehicle.marque} ${selectedVehicle.modele}` : 'Véhicule inconnu'}
-                    </Text>
-                    <Text style={styles.infoSubtitle}>
-                      {selectedVehicle ? selectedVehicle.immatriculation : ''}
-                    </Text>
-                  </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Sélectionner un véhicule</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                    {vehicles.map((v) => (
+                      <TouchableOpacity
+                        key={v.id}
+                        style={[styles.infoCard, {
+                          borderWidth: 2,
+                          borderColor: formData.vehiculeId === v.id ? colors.primary : 'transparent',
+                          backgroundColor: formData.vehiculeId === v.id ? colors.primary + '10' : colors.surface,
+                          marginRight: 12,
+                          minWidth: 180
+                        }]}
+                        onPress={() => {
+                          setFormData(prev => ({ ...prev, vehiculeId: v.id }));
+                          setSelectedVehicle(v);
+                        }}
+                        disabled={!canEdit()}
+                      >
+                        <View style={styles.infoIcon}>
+                          <Car size={20} color={colors.primary} />
+                        </View>
+                        <View style={styles.infoDetails}>
+                          <Text style={styles.infoTitle}>{v.marque} {v.modele}</Text>
+                          <Text style={styles.infoSubtitle}>{v.immatriculation}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               </View>
               
               {/* Informations client */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Client</Text>
-                <View style={styles.infoCard}>
-                  <View style={styles.infoIcon}>
-                    <User size={20} color={colors.primary} />
-                  </View>
-                  <View style={styles.infoDetails}>
-                    <Text style={styles.infoTitle}>
-                      {selectedClient ? `${selectedClient.prenom} ${selectedClient.nom}` : 'Client inconnu'}
-                    </Text>
-                    <Text style={styles.infoSubtitle}>
-                      {selectedClient ? (selectedClient.telephone || selectedClient.email || '') : ''}
-                    </Text>
-                  </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Sélectionner un client</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                    {clients.map((c) => (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={[styles.infoCard, {
+                          borderWidth: 2,
+                          borderColor: formData.clientId === c.id ? colors.primary : 'transparent',
+                          backgroundColor: formData.clientId === c.id ? colors.primary + '10' : colors.surface,
+                          marginRight: 12,
+                          minWidth: 180
+                        }]}
+                        onPress={() => {
+                          setFormData(prev => ({ ...prev, clientId: c.id }));
+                          setSelectedClient(c);
+                        }}
+                        disabled={!canEdit()}
+                      >
+                        <View style={styles.infoIcon}>
+                          <User size={20} color={colors.primary} />
+                        </View>
+                        <View style={styles.infoDetails}>
+                          <Text style={styles.infoTitle}>{c.prenom} {c.nom}</Text>
+                          <Text style={styles.infoSubtitle}>{c.telephone || c.email || ''}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               </View>
               
@@ -656,7 +691,14 @@ export default function EditReservationModal({
                     </View>
                     <View style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Kilométrage inclus:</Text>
-                      <Text style={styles.summaryValue}>{calculateIncludedKm()} km</Text>
+                      <TextInput
+                        style={[styles.input, { width: 100, textAlign: 'right', paddingVertical: 4, fontSize: 14 }]}
+                        value={formData.kilometrageInclus?.toString() || calculateIncludedKm().toString()}
+                        onChangeText={text => setFormData(prev => ({ ...prev, kilometrageInclus: parseInt(text) || 0 }))}
+                        keyboardType="numeric"
+                        editable={canEdit()}
+                      />
+                      <Text style={styles.summaryLabel}>km</Text>
                     </View>
                     {isWeekendRental() && (
                       <View style={styles.summaryRow}>

@@ -34,27 +34,34 @@ export function useContracts() {
   const generateContract = async (reservationId: string): Promise<string | null> => {
     setLoading(true);
     setError(null);
-    
     try {
       const reservation = reservations.find(r => r.id === reservationId);
       if (!reservation) {
+        setError('Réservation introuvable');
         throw new Error('Réservation introuvable');
       }
-
       const vehicle = vehicles.find(v => v.id === reservation.vehiculeId);
       if (!vehicle) {
+        setError('Véhicule introuvable');
         throw new Error('Véhicule introuvable');
       }
-
       const client = clients.find(c => c.id === reservation.clientId);
       if (!client) {
+        setError('Client introuvable');
         throw new Error('Client introuvable');
       }
-      
+      if (!client.email) {
+        setError('Le client n\'a pas d\'adresse email.');
+        throw new Error('Le client n\'a pas d\'adresse email.');
+      }
+      if (!companyInfo || !companyInfo.nom) {
+        setError('Informations entreprise manquantes');
+        throw new Error('Informations entreprise manquantes');
+      }
       // Get extra fees
       const extraFees = getExtraFees();
-      
-      // Generate contract PDF
+      // Log données envoyées
+      console.log('Génération contrat: données envoyées', {reservation, client, vehicle, companyInfo, extraFees});
       let contractUrl;
       try {
         contractUrl = await ContractService.generateContract(
@@ -65,16 +72,16 @@ export function useContracts() {
           extraFees
         );
       } catch (error) {
-        console.error('Error in contract generation:', error);
-        throw new Error('Erreur lors de la génération du contrat PDF');
+        console.error('Erreur lors de la génération du contrat PDF:', error);
+        setError(error instanceof Error ? error.message : String(error));
+        throw error;
       }
-      
       if (!contractUrl) {
+        setError('Impossible de générer l\'URL du contrat');
         throw new Error('Impossible de générer l\'URL du contrat');
       }
-      
       // Save contract to Firestore
-      const contractData: Omit<Contract, 'id'> = {
+      const contractData = {
         reservationId: reservation.id,
         clientId: client.id,
         vehicleId: vehicle.id,
@@ -82,28 +89,22 @@ export function useContracts() {
         sentToEmail: false,
         createdAt: new Date().toISOString(),
       };
-      
       try {
         await ContractFirebaseService.create(contractData);
       } catch (error) {
-        console.error('Error saving contract to Firestore:', error);
-        // Continue even if saving to Firestore fails
+        console.error('Erreur Firestore contrat:', error);
       }
-      
-      // Update reservation with contract URL
       try {
         await updateReservation(reservation.id, {
           contratGenere: contractUrl
         });
       } catch (error) {
-        console.error('Error updating reservation with contract URL:', error);
-        // Continue even if updating reservation fails
+        console.error('Erreur updateReservation contrat:', error);
       }
-      
       return contractUrl;
     } catch (error) {
-      console.error('Error generating contract:', error);
-      setError(error instanceof Error ? error.message : 'Erreur lors de la génération du contrat');
+      console.error('Erreur globale génération contrat:', error);
+      setError(error instanceof Error ? error.message : String(error));
       return null;
     } finally {
       setLoading(false);

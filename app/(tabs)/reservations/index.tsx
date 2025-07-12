@@ -12,6 +12,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import EditReservationModal from '@/components/reservations/EditReservationModal';
 import SuccessToast from '@/components/reservations/SuccessToast';
 import ReservationCard from '@/components/reservations/ReservationCard';
+import ReservationsCalendarModal from '@/components/reservations/ReservationsCalendarModal';
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'Toutes', color: '#64748B' },
@@ -34,6 +35,7 @@ export default function ReservationsScreen() {
   const [filterHeight] = useState(new Animated.Value(1));
   const [isFilterCollapsed, setIsFilterCollapsed] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   // Create pan responder for swipe gestures
   const panResponder = PanResponder.create({
@@ -75,7 +77,7 @@ export default function ReservationsScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [80, 260], // Collapsed height vs full height
+    outputRange: [60, 240], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -86,7 +88,7 @@ export default function ReservationsScreen() {
     return <ErrorMessage message={error} />;
   }
 
-  const handleEditReservation = (reservation) => {
+  const handleEditReservation = (reservation: any) => {
     setSelectedReservation(reservation);
     setEditModalVisible(true);
   };
@@ -124,203 +126,212 @@ export default function ReservationsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View 
-        style={[styles.header, { height: filterSectionHeight }]}
-        {...panResponder.panHandlers}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>Réservations</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.collapseButton}
-                onPress={isFilterCollapsed ? expandFilter : collapseFilter}
-              >
-                {isFilterCollapsed ? (
-                  <ChevronDown size={20} color={colors.text} />
-                ) : (
-                  <ChevronUp size={20} color={colors.text} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => router.push('/reservations/add')}
-              >
-                <Plus size={24} color={colors.background} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Animated content that will collapse/expand */}
-          <Animated.View pointerEvents={isFilterCollapsed ? 'none' : 'auto'} style={[
-            styles.collapsibleContent,
-            { opacity: filterHeight }
-          ]}>
-            {/* Statistiques rapides */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{stats.total}</Text>
-                <Text style={styles.statLabel}>Total</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.info }]}>{stats.planifiee}</Text>
-                <Text style={styles.statLabel}>Planifiées</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.success }]}>{stats.confirmee}</Text>
-                <Text style={styles.statLabel}>Confirmées</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.warning }]}>{stats.enCours}</Text>
-                <Text style={styles.statLabel}>En cours</Text>
-              </View>
-            </View>
-
-            {/* Barre de recherche */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par véhicule, client ou type..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-            </View>
-
-            {/* Filtres */}
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              style={styles.filtersContainer}
-              contentContainerStyle={styles.filtersContent}
-            >
-              {STATUS_FILTERS.map((filter) => (
-                <TouchableOpacity
-                  key={filter.key}
-                  style={[
-                    styles.filterButton,
-                    activeFilter === filter.key && styles.filterButtonActive,
-                    activeFilter === filter.key && { backgroundColor: filter.color }
-                  ]}
-                  onPress={() => setActiveFilter(filter.key)}
+      <ReservationsCalendarModal visible={calendarVisible} onClose={() => setCalendarVisible(false)} />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.View 
+          style={[styles.header, { height: filterSectionHeight }]}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>Réservations</Text>
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  style={styles.calendarButton}
+                  onPress={() => setCalendarVisible(true)}
                 >
-                  <Text style={[
-                    styles.filterText,
-                    activeFilter === filter.key && styles.filterTextActive
-                  ]}>
-                    <Text>
-                      {filter.key === 'Planifiée' ? '🗓️ ' : 
-                       filter.key === 'Confirmé' ? '✅ ' : 
-                       filter.key === 'En cours' ? '🚗 ' : 
-                       filter.key === 'Terminé' ? '✔️ ' : 
-                       filter.key === 'Annulé' ? '❌ ' : 
-                       '🔍 '}
-                    {filter.label}
-                    </Text>
-                  </Text>
-                  {filter.key !== 'all' && (
-                    <View style={[
-                      styles.filterBadge,
-                      activeFilter === filter.key && styles.filterBadgeActive
-                    ]}>
-                      <Text style={[
-                        styles.filterBadgeText,
-                        activeFilter === filter.key && styles.filterBadgeTextActive
-                      ]}>
-                        {filter.key === 'Planifiée' ? stats.planifiee :
-                         filter.key === 'Confirmé' ? stats.confirmee :
-                         filter.key === 'En cours' ? stats.enCours :
-                         filter.key === 'Terminé' ? stats.terminee :
-                         stats.annulee}
-                      </Text>
-                    </View>
+                  <Calendar size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.collapseButton}
+                  onPress={isFilterCollapsed ? expandFilter : collapseFilter}
+                >
+                  {isFilterCollapsed ? (
+                    <ChevronDown size={20} color={colors.text} />
+                  ) : (
+                    <ChevronUp size={20} color={colors.text} />
                   )}
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </Animated.View>
-
-          {/* Always visible search bar when collapsed */}
-          {isFilterCollapsed && (
-            <View style={styles.collapsedSearchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par véhicule, client ou type..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={() => router.push('/reservations/add')}
+                >
+                  <Plus size={24} color={colors.background} />
+                </TouchableOpacity>
               </View>
             </View>
-          )}
-        </View>
-      </Animated.View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {filteredReservations.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Calendar size={64} color={colors.textSecondary} />
-            <Text style={styles.emptyTitle}>
-              {searchQuery || activeFilter !== 'all' 
-                ? 'Aucune réservation trouvée' 
-                : 'Aucune réservation'
-              }
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery || activeFilter !== 'all'
-                ? 'Essayez de modifier vos critères de recherche'
-                : 'Commencez par créer votre première réservation'
-              }
-            </Text>
-            {(!searchQuery && activeFilter === 'all') && (
-              <TouchableOpacity 
-                style={styles.emptyActionButton}
-                onPress={() => router.push('/reservations/add')}
+            {/* Animated content that will collapse/expand */}
+            <Animated.View style={[
+              styles.collapsibleContent,
+              { opacity: filterHeight }
+            ]}>
+              {/* Statistiques rapides */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{stats.total}</Text>
+                  <Text style={styles.statLabel}>Total</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.info }]}>{stats.planifiee}</Text>
+                  <Text style={styles.statLabel}>Planifiées</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.success }]}>{stats.confirmee}</Text>
+                  <Text style={styles.statLabel}>Confirmées</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.warning }]}>{stats.enCours}</Text>
+                  <Text style={styles.statLabel}>En cours</Text>
+                </View>
+              </View>
+
+              {/* Barre de recherche */}
+              <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par véhicule, client ou type..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
+
+              {/* Filtres */}
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                style={styles.filtersContainer}
+                contentContainerStyle={styles.filtersContent}
               >
-                <Plus size={20} color={colors.background} />
-                <Text style={styles.emptyActionText}>Nouvelle réservation</Text>
-              </TouchableOpacity>
+                {STATUS_FILTERS.map((filter) => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    style={[
+                      styles.filterButton,
+                      activeFilter === filter.key && styles.filterButtonActive,
+                      activeFilter === filter.key && { backgroundColor: filter.color }
+                    ]}
+                    onPress={() => setActiveFilter(filter.key)}
+                  >
+                    <Text style={[
+                      styles.filterText,
+                      activeFilter === filter.key && styles.filterTextActive
+                    ]}>
+                      <Text>
+                        {filter.key === 'Planifiée' ? '🗓️ ' : 
+                         filter.key === 'Confirmé' ? '✅ ' : 
+                         filter.key === 'En cours' ? '🚗 ' : 
+                         filter.key === 'Terminé' ? '✔️ ' : 
+                         filter.key === 'Annulé' ? '❌ ' : 
+                         '🔍 '}
+                      {filter.label}
+                      </Text>
+                    </Text>
+                    {filter.key !== 'all' && (
+                      <View style={[
+                        styles.filterBadge,
+                        activeFilter === filter.key && styles.filterBadgeActive
+                      ]}>
+                        <Text style={[
+                          styles.filterBadgeText,
+                          activeFilter === filter.key && styles.filterBadgeTextActive
+                        ]}>
+                          {filter.key === 'Planifiée' ? stats.planifiee :
+                           filter.key === 'Confirmé' ? stats.confirmee :
+                           filter.key === 'En cours' ? stats.enCours :
+                           filter.key === 'Terminé' ? stats.terminee :
+                           stats.annulee}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Animated.View>
+
+            {/* Always visible search bar when collapsed */}
+            {isFilterCollapsed && (
+              <View style={styles.collapsedSearchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par véhicule, client ou type..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
             )}
           </View>
-        ) : (
-          <View style={styles.reservationsList}>
-            {filteredReservations
-              .sort((a, b) => new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime())
-              .map((reservation) => (
-                <ReservationCard
-                  key={reservation.id}
-                  reservation={reservation}
-                  vehicleName={getVehicleName(reservation.vehiculeId)}
-                  clientName={getClientName(reservation.clientId)}
-                  onPress={() => router.push(`/reservations/details/${reservation.id}`)}
-                  onEdit={() => handleEditReservation(reservation)}
-                  onEDLPress={() => router.push(`/reservations/edl/${reservation.id}`)}
-                  canStartEDL={canStartEDL(reservation)}
-                />
-              ))}
-          </View>
-        )}
+        </Animated.View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {filteredReservations.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Calendar size={64} color={colors.textSecondary} />
+              <Text style={styles.emptyTitle}>
+                {searchQuery || activeFilter !== 'all' 
+                  ? 'Aucune réservation trouvée' 
+                  : 'Aucune réservation'
+                }
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery || activeFilter !== 'all'
+                  ? 'Essayez de modifier vos critères de recherche'
+                  : 'Commencez par créer votre première réservation'
+                }
+              </Text>
+              {(!searchQuery && activeFilter === 'all') && (
+                <TouchableOpacity 
+                  style={styles.emptyActionButton}
+                  onPress={() => router.push('/reservations/add')}
+                >
+                  <Plus size={20} color={colors.background} />
+                  <Text style={styles.emptyActionText}>Nouvelle réservation</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View style={styles.reservationsList}>
+              {filteredReservations
+                .sort((a, b) => new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime())
+                .map((reservation) => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    vehicleName={getVehicleName(reservation.vehiculeId)}
+                    clientName={getClientName(reservation.clientId)}
+                    onPress={() => router.push(`/reservations/details/${reservation.id}`)}
+                    onEdit={() => handleEditReservation(reservation)}
+                    onEDLPress={() => router.push(`/reservations/edl/${reservation.id}`)}
+                    canStartEDL={canStartEDL(reservation)}
+                  />
+                ))}
+            </View>
+          )}
+        </ScrollView>
+        
+        {/* Modal de modification */}
+        <EditReservationModal
+          visible={editModalVisible}
+          reservation={selectedReservation}
+          onClose={() => setEditModalVisible(false)}
+          onSuccess={handleEditSuccess}
+        />
+        
+        {/* Toast de succès */}
+        <SuccessToast
+          visible={successToastVisible}
+          message="Réservation modifiée avec succès"
+          onClose={() => setSuccessToastVisible(false)}
+        />
       </ScrollView>
-      
-      {/* Modal de modification */}
-      <EditReservationModal
-        visible={editModalVisible}
-        reservation={selectedReservation}
-        onClose={() => setEditModalVisible(false)}
-        onSuccess={handleEditSuccess}
-      />
-      
-      {/* Toast de succès */}
-      <SuccessToast
-        visible={successToastVisible}
-        message="Réservation modifiée avec succès"
-        onClose={() => setSuccessToastVisible(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -329,13 +340,12 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
-  header: {
-    backgroundColor: colors.surface,
-    paddingTop: 16,
-    borderBottomColor: colors.border + '60', 
-    overflow: 'hidden',
-  },
+  headerSafe: { backgroundColor: colors.background },
+  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
+  title: { fontSize: 28, fontWeight: '800', color: colors.text, marginTop: 0 },
+  scrollContent: { paddingBottom: 100, paddingTop: 8 },
   headerContent: {
     flex: 1,
   },
@@ -347,8 +357,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    zIndex: 10, // Ensure buttons stay on top
+    marginBottom: 16,
   },
   headerActions: {
     flexDirection: 'row',
@@ -365,11 +374,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
-  },
   addButton: {
     backgroundColor: colors.primary,
     width: 48,
@@ -377,6 +381,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  calendarButton: {
+    marginRight: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -409,7 +421,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   collapsedSearchContainer: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 12,
     zIndex: 10,
   },
   searchBar: {
@@ -430,12 +442,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filtersContainer: {
     paddingLeft: 20,
-    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 20,
     gap: 8,
-    paddingBottom: 8,
   },
   filterButton: {
     flexDirection: 'row',
@@ -443,7 +453,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 28,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   filterButtonActive: {
@@ -460,8 +470,8 @@ const createStyles = (colors: any) => StyleSheet.create({
   filterBadge: {
     backgroundColor: colors.border,
     borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     minWidth: 20,
     alignItems: 'center',
   },

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, Platform, Switch } from 'react-native';
 import { ArrowLeft, Camera, Save, DollarSign, Check } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useData, Vehicle } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,6 +16,7 @@ const STATUT_OPTIONS = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'];
 export default function AddVehicleScreen() {
   const { colors } = useTheme();
   const { addVehicle } = useData();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -53,6 +55,9 @@ export default function AddVehicleScreen() {
     ageMinimal: 21,
     anneesPermis: 2,
   });
+
+  const [isKmIllimite, setIsKmIllimite] = useState(false);
+  const [previousKm, setPreviousKm] = useState(200);
 
   // Get current year for permit year dropdown
   const currentYear = new Date().getFullYear();
@@ -117,6 +122,7 @@ export default function AddVehicleScreen() {
 
     try {
       const vehicleData: Omit<Vehicle, 'id'> = {
+        userId: user?.uid || '',
         marque: formData.marque,
         modele: formData.modele,
         immatriculation: formData.immatriculation,
@@ -432,25 +438,50 @@ export default function AddVehicleScreen() {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Kilométrage journalier inclus</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.kilometrageJournalier.toString()}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, kilometrageJournalier: parseInt(text) || 0 }))}
-              keyboardType="numeric"
-              placeholder="200"
-              placeholderTextColor={colors.textSecondary}
-            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TextInput
+                style={[styles.input, { flex: 1, backgroundColor: isKmIllimite ? colors.surface : colors.background, opacity: isKmIllimite ? 0.5 : 1 }]}
+                value={isKmIllimite ? 'Illimité' : formData.kilometrageJournalier.toString()}
+                onChangeText={(text) => {
+                  const val = parseInt(text) || 0;
+                  setFormData(prev => ({ ...prev, kilometrageJournalier: val }));
+                  setPreviousKm(val);
+                }}
+                keyboardType="numeric"
+                placeholder="200"
+                placeholderTextColor={colors.textSecondary}
+                editable={!isKmIllimite}
+              />
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Switch
+                  value={isKmIllimite}
+                  onValueChange={(value) => {
+                    setIsKmIllimite(value);
+                    if (value) {
+                      setPreviousKm(formData.kilometrageJournalier);
+                      setFormData(prev => ({ ...prev, kilometrageJournalier: -1 }));
+                    } else {
+                      setFormData(prev => ({ ...prev, kilometrageJournalier: previousKm || 200 }));
+                    }
+                  }}
+                  thumbColor={isKmIllimite ? colors.primary : colors.border}
+                  trackColor={{ false: colors.border, true: colors.primary + '60' }}
+                />
+                <Text style={{ marginLeft: 8, color: colors.text }}>km illimités</Text>
+              </View>
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Prix du km supplémentaire (€)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: isKmIllimite ? colors.surface : colors.background, opacity: isKmIllimite ? 0.5 : 1 }]}
               value={formData.prixKmSupplementaire.toString()}
               onChangeText={(text) => setFormData(prev => ({ ...prev, prixKmSupplementaire: parseFloat(text) || 0 }))}
               keyboardType="numeric"
               placeholder="0.50"
               placeholderTextColor={colors.textSecondary}
+              editable={!isKmIllimite}
             />
           </View>
         </View>

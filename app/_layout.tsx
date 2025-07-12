@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, AppState, View } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -13,8 +13,8 @@ import ErrorMessage from '@/components/ErrorMessage';
 import AuthGuard from '@/components/AuthGuard';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import React from 'react';
+import ProfileGuard from '@/components/ProfileGuard';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -100,11 +100,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <SafeAreaProvider>
-          <DataProvider>
-            <SettingsProvider>
-              <NotificationProvider>
-                <SplashScreenGate>
+        <DataProvider>
+          <SettingsProvider>
+            <NotificationProvider>
+              <SplashScreenGate>
+                <ProfileGuard>
                   <Stack screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen 
@@ -116,14 +116,15 @@ export default function RootLayout() {
                       }} 
                     />
                     <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                    <Stack.Screen name="onboarding-profile" options={{ headerShown: false }} />
                     <Stack.Screen name="+not-found" />
                   </Stack>
                   <StatusBar style="auto" />
-                </SplashScreenGate>
-              </NotificationProvider>
-            </SettingsProvider>
-          </DataProvider>
-        </SafeAreaProvider>
+                </ProfileGuard>
+              </SplashScreenGate>
+            </NotificationProvider>
+          </SettingsProvider>
+        </DataProvider>
       </AuthProvider>
     </ThemeProvider>
   );

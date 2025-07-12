@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, Image, TouchableOpacity, Animated } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useVehicles } from '@/hooks/useVehicles';
@@ -17,7 +17,7 @@ import VehicleChargesSection from '@/components/dashboard/VehicleChargesSection'
 import TodayDeparturesSection from '@/components/dashboard/TodayDeparturesSection';
 import NotificationDemo from '@/components/NotificationDemo';
 import { router } from 'expo-router';
-import { ChevronRight, Bell } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 
 export default function DashboardScreen() {
@@ -31,6 +31,11 @@ export default function DashboardScreen() {
   const { showSuccess, showError, showWarning, showInfo } = useNotificationContext();
   
   const screenWidth = Dimensions.get('window').width;
+  
+  // État pour l'animation du header
+  const [showHeader, setShowHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const headerAnimation = useRef(new Animated.Value(1)).current;
 
   if (vehiclesLoading) {
     return <LoadingSpinner message="Chargement du tableau de bord..." />;
@@ -103,36 +108,79 @@ export default function DashboardScreen() {
 
   const styles = createStyles(colors);
 
+  // Fonction pour gérer le scroll
+  const handleScroll = (event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDelta = currentScrollY - lastScrollY;
+    
+    // Toujours montrer le header quand on est en haut de la page
+    if (currentScrollY <= 0 && !showHeader) {
+      setShowHeader(true);
+      Animated.timing(headerAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else if (scrollDelta > 5 && showHeader && currentScrollY > 30) {
+      // Scroll vers le bas - cacher le header plus rapidement
+      setShowHeader(false);
+      Animated.timing(headerAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else if (scrollDelta < -60 && !showHeader && currentScrollY > 100) {
+      // Scroll vers le haut - montrer le header seulement si on remonte significativement
+      // et qu'on n'est pas tout en bas de la page
+      setShowHeader(true);
+      Animated.timing(headerAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+    
+    setLastScrollY(currentScrollY);
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.headerContainer}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.title}>Tableau de bord</Text>
-            <Text style={styles.subtitle}>Bienvenue, {companyInfo.nom || 'EasyGarage'}</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity 
-              onPress={() => {
-                showSuccess('Test réussi !', 'Cette notification fonctionne parfaitement.');
-              }} 
-              style={styles.notificationButton}
-            >
-              <Bell size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/settings')} style={styles.logoContainer}>
-              {companyInfo.logo ? (
-                <Image source={{ uri: companyInfo.logo }} style={styles.logo} />
-              ) : (
-                <View style={[styles.logoContainer, { backgroundColor: colors.primary + '20' }]}>
-                  <Text style={{ color: colors.primary, fontSize: 18, fontWeight: 'bold' }}>
-                    {companyInfo.nom ? companyInfo.nom.charAt(0) : 'E'}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <Animated.View 
+        style={[
+          styles.header,
+          {
+            transform: [{
+              translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-300, 0],
+              })
+            }],
+            opacity: headerAnimation.interpolate({
+              inputRange: [0, 0.5, 1],
+              outputRange: [0, 0, 1],
+            }),
+          }
+        ]}
+      >
+        <Text style={styles.title}>Tableau de bord</Text>
+        <View style={styles.logoTitleContainer}>
+          <Text style={styles.welcomeText}>Bienvenue</Text>
+          <TouchableOpacity onPress={() => router.push('/settings')} style={styles.logoContainer}>
+            {companyInfo.logo ? (
+              <Image source={{ uri: companyInfo.logo }} style={styles.logo} />
+            ) : (
+              <Image source={require('@/assets/images/easygarage-icon.png')} style={styles.logo} />
+            )}
+          </TouchableOpacity>
         </View>
+      </Animated.View>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
 
         <StatsCards
           vehiclesCount={vehicles.length}
@@ -153,41 +201,56 @@ export default function DashboardScreen() {
 
         <ChargesSection />
 
-        <NotificationDemo />
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: colors.background },
+  headerSafe: { backgroundColor: colors.background },
+  header: { 
+    paddingTop: Platform.OS === 'ios' ? 80 : 90, 
+    paddingBottom: 12, 
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: '800', 
+    color: colors.text, 
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  scrollContent: { paddingBottom: 100, paddingTop: 0 },
+  scrollView: { 
+    paddingTop: 180,
   },
   headerContainer: {
     padding: 20,
     paddingTop: 20,
     paddingBottom: 12,
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerTextContainer: {
-    flex: 1,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
+  logoTitleContainer: {
+    alignItems: 'center',
+    gap: 12,
   },
   logoContainer: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 30, 
     overflow: 'hidden',
     backgroundColor: colors.surface,
@@ -196,25 +259,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  logoPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   logo: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   chartContainer: {
     marginHorizontal: 20,

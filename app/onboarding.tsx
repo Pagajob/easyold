@@ -42,334 +42,7 @@ export default function OnboardingScreen() {
     country: 'FR',
   });
 
-  // Check if user already completed onboarding
-  useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!user && !isRedirected) {
-        setIsRedirected(true);
-        router.replace('/(auth)/login');
-        return; 
-      }
-
-      setIsLoading(true);
-      try {
-        const entrepriseDoc = await getDoc(doc(db, 'entreprises', user.uid));
-        if (entrepriseDoc.exists()) {
-          // User already completed onboarding, redirect to dashboard
-          router.replace('/(tabs)');
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-      } finally { 
-        setIsLoading(false);
-      }
-    };
-
-    checkOnboardingStatus();
-  }, [user]);
-  
-  // Animate progress bar when step changes
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: currentStep / 5,
-      duration: 300,
-      useNativeDriver: false
-    }).start();
-  }, [currentStep]);
-  
-  const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
-  const pickLogo = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permission requise', 'Nous avons besoin de la permission pour accéder à vos photos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setFormData(prev => ({ ...prev, logo: result.assets[0].uri }));
-    }
-  };
-
-  // Convert URI to Blob for upload
-  const uriToBlob = async (uri: string): Promise<Blob> => {
-    const response = await fetch(uri);
-    return await response.blob();
-  };
-
-  const handleAddressSelect = (address: string) => {
-    setFormData(prev => ({ ...prev, address }));
-  };
-
-  const validateStep = (step: number) => {
-    switch (step) {
-      case 1:
-        return !!formData.companyName;
-      case 2:
-        return true; // Logo is optional
-      case 3:
-        return true; // SIRET is optional
-      case 4:
-        return !!formData.address;
-      case 5:
-        return !!formData.country;
-      default:
-        return false;
-    }
-  };
-
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      if (currentStep < 5) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        handleSubmit();
-      }
-    } else {
-      Alert.alert('Champ requis', 'Veuillez remplir tous les champs obligatoires.');
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!user) {
-      Alert.alert('Erreur', 'Vous devez être connecté pour continuer.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      let logoUrl = '';
-      
-      // Upload logo if exists
-      if (formData.logo) {
-        try {
-          const logoBlob = await uriToBlob(formData.logo);
-          const logoRef = ref(storage, `entreprises/${user.uid}/logo`);
-          await uploadBytes(logoRef, logoBlob);
-          logoUrl = await getDownloadURL(logoRef);
-        } catch (error) {
-          console.error('Failed to upload logo:', error);
-          // Continue without logo
-        }
-      }
-
-      // Save company data to Firestore
-      const entrepriseData = {
-        nom: formData.companyName,
-        userId: user.uid, 
-        logo: logoUrl,
-        siret: formData.siret,
-        adresse: formData.address,
-        pays: COUNTRIES.find(c => c.code === formData.country)?.name || 'France',
-        paysCode: formData.country,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      // Use user.uid as document ID to ensure one company per user
-      await setDoc(doc(db, 'entreprises', user.uid), entrepriseData);
-
-      // Also update company info in local storage for settings
-      const companyInfo = {
-        nom: formData.companyName,
-        logo: logoUrl,
-        siret: formData.siret,
-        adresse: formData.address,
-        userId: user.uid,
-        profilePicture: 'easygarage-icon.png'
-      };
-
-      await AsyncStorage.setItem(`companyInfo_${user.uid}`, JSON.stringify(companyInfo));
-      
-      // Redirect to dashboard
-      router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Error saving company data:', error);
-      Alert.alert('Erreur', 'Impossible de sauvegarder les informations. Veuillez réessayer.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Render step indicator with progress bar
-  const renderStepIndicator = () => (
-    <View style={styles.stepIndicator}>
-      {[1, 2, 3, 4, 5].map((step) => (
-        <View key={step} style={styles.stepContainer}>
-          <View style={[
-            styles.stepCircle,
-            currentStep >= step && styles.stepCircleActive
-          ]}>
-            <Text style={[
-              styles.stepText,
-              currentStep >= step && styles.stepTextActive
-            ]}>
-              {step}
-            </Text>
-          </View>
-          {step < 5 && (
-            <View style={[
-              styles.stepLine,
-              currentStep > step && styles.stepLineActive
-            ]} />
-          )}
-        </View>
-      ))}
-      
-      <View style={styles.progressBarContainer}>
-        <Animated.View 
-          style={[
-            styles.progressBar,
-            { width: progressWidth }
-          ]} 
-        />
-      </View>
-    </View>
-  );
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Nom de votre entreprise</Text>
-            <Text style={styles.stepDescription}>
-              Comment s'appelle votre entreprise ?
-            </Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Nom de l'entreprise *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.companyName}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, companyName: text }))}
-                placeholder="Ex: EasyGarage"
-                placeholderTextColor={colors.textSecondary}
-              />
-            </View>
-          </View>
-        );
-      case 2:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Logo de l'entreprise</Text>
-            <Text style={styles.stepDescription}>
-              Ajoutez le logo de votre entreprise pour personnaliser l'application
-            </Text>
-            
-            <TouchableOpacity style={styles.logoButton} onPress={pickLogo}>
-              {formData.logo ? (
-                <Image source={{ uri: formData.logo }} style={styles.logoPreview} />
-              ) : (
-                <>
-                  <Camera size={32} color={colors.textSecondary} />
-                  <Text style={styles.logoButtonText}>Ajouter un logo (optionnel)</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        );
-      case 3:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Numéro SIRET</Text>
-            <Text style={styles.stepDescription}>
-              Ajoutez votre numéro SIRET pour l'afficher sur vos contrats et factures
-            </Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Numéro SIRET (optionnel)</Text>
-              <View style={styles.inputWithIcon}>
-                <Hash size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.inputText}
-                  value={formData.siret}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, siret: text }))}
-                  placeholder="Ex: 12345678901234"
-                  placeholderTextColor={colors.textSecondary}
-                  keyboardType="numeric"
-                  maxLength={14}
-                />
-              </View>
-            </View>
-          </View>
-        );
-      case 4:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Adresse de l'entreprise</Text>
-            <Text style={styles.stepDescription}>
-              Indiquez l'adresse de votre entreprise pour l'afficher sur les documents
-            </Text>
-            
-            <AddressAutocomplete
-              value={formData.address}
-              onAddressSelect={handleAddressSelect}
-              label="Adresse complète *"
-              placeholder="Commencez à taper votre adresse..."
-            />
-          </View>
-        );
-      case 5:
-        return (
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Pays d'activité</Text>
-            <Text style={styles.stepDescription}>
-              Sélectionnez le pays principal d'activité de votre entreprise
-            </Text>
-            
-            <View style={styles.countriesGrid}>
-              {COUNTRIES.map((country) => (
-                <TouchableOpacity
-                  key={country.code}
-                  style={[
-                    styles.countryOption,
-                    formData.country === country.code && styles.countryOptionActive
-                  ]}
-                  onPress={() => setFormData(prev => ({ ...prev, country: country.code }))}
-                >
-                  <Text style={styles.countryFlag}>{country.flag}</Text>
-                  <Text style={[
-                    styles.countryName,
-                    formData.country === country.code && styles.countryNameActive
-                  ]}>
-                    {country.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Chargement...</Text>
-      </View>
-    );
-  }
-
+  // Déclaration des styles placée ici pour être accessible à tout moment
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -613,6 +286,335 @@ export default function OnboardingScreen() {
       color: colors.background,
     },
   });
+
+  // Check if user already completed onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user && !isRedirected) {
+        setIsRedirected(true);
+        router.replace('/(auth)/login');
+        return; 
+      }
+
+      setIsLoading(true);
+      try {
+        const entrepriseDoc = await getDoc(doc(db, 'entreprises', user.uid));
+        if (entrepriseDoc.exists()) {
+          // User already completed onboarding, redirect to dashboard
+          router.replace('/(tabs)');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      } finally { 
+        setIsLoading(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user]);
+  
+  // Animate progress bar when step changes
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: currentStep / 5,
+      duration: 300,
+      useNativeDriver: false
+    }).start();
+  }, [currentStep]);
+  
+  const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+
+  const pickLogo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission requise', 'Nous avons besoin de la permission pour accéder à vos photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setFormData(prev => ({ ...prev, logo: result.assets[0].uri }));
+    }
+  };
+
+  // Convert URI to Blob for upload
+  const uriToBlob = async (uri: string): Promise<Blob> => {
+    const response = await fetch(uri);
+    return await response.blob();
+  };
+
+  const handleAddressSelect = (address: string) => {
+    setFormData(prev => ({ ...prev, address }));
+  };
+
+  const validateStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return !!formData.companyName;
+      case 2:
+        return true; // Logo is optional
+      case 3:
+        return true; // SIRET is optional
+      case 4:
+        return !!formData.address;
+      case 5:
+        return !!formData.country;
+      default:
+        return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < 5) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+    } else {
+      Alert.alert('Champ requis', 'Veuillez remplir tous les champs obligatoires.');
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user) {
+      Alert.alert('Erreur', 'Vous devez être connecté pour continuer.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      let logoUrl = '';
+      
+      // Upload logo if exists
+      if (formData.logo) {
+        try {
+          const logoBlob = await uriToBlob(formData.logo);
+          const logoRef = ref(storage, `entreprises/${user.uid}/logo`);
+          await uploadBytes(logoRef, logoBlob);
+          logoUrl = await getDownloadURL(logoRef);
+        } catch (error) {
+          console.error('Failed to upload logo:', error);
+          // Continue without logo
+        }
+      }
+
+      // Save company data to Firestore
+      const entrepriseData = {
+        nom: formData.companyName,
+        userId: user.uid, 
+        logo: logoUrl,
+        siret: formData.siret,
+        adresse: formData.address,
+        pays: COUNTRIES.find(c => c.code === formData.country)?.name || 'France',
+        paysCode: formData.country,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      // Log des données envoyées
+      console.log('Onboarding - Données envoyées à Firestore:', entrepriseData);
+      // Use user.uid as document ID to ensure one company per user
+      await setDoc(doc(db, 'entreprises', user.uid), entrepriseData);
+
+      // Also update company info in local storage for settings
+      const companyInfo = {
+        nom: formData.companyName,
+        logo: logoUrl,
+        siret: formData.siret,
+        adresse: formData.address,
+        userId: user.uid,
+        profilePicture: 'easygarage-icon.png'
+      };
+
+      await AsyncStorage.setItem(`companyInfo_${user.uid}`, JSON.stringify(companyInfo));
+      
+      // Redirect to dashboard
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Erreur Firestore onboarding:', error);
+      Alert.alert('Erreur', `Impossible de sauvegarder les informations.\n${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render step indicator with progress bar
+  const renderStepIndicator = () => (
+    <View style={styles.stepIndicator}>
+      {[1, 2, 3, 4, 5].map((step) => (
+        <View key={step} style={styles.stepContainer}>
+          <View style={[
+            styles.stepCircle,
+            currentStep >= step && styles.stepCircleActive
+          ]}>
+            <Text style={[
+              styles.stepText,
+              currentStep >= step && styles.stepTextActive
+            ]}>
+              {step}
+            </Text>
+          </View>
+          {step < 5 && (
+            <View style={[
+              styles.stepLine,
+              currentStep > step && styles.stepLineActive
+            ]} />
+          )}
+        </View>
+      ))}
+      
+      <View style={styles.progressBarContainer}>
+        <Animated.View 
+          style={[
+            styles.progressBar,
+            { width: progressWidth }
+          ]} 
+        />
+      </View>
+    </View>
+  );
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Nom de votre entreprise</Text>
+            <Text style={styles.stepDescription}>
+              Comment s'appelle votre entreprise ?
+            </Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nom de l'entreprise *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.companyName}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, companyName: text }))}
+                placeholder="Ex: EasyGarage"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+          </View>
+        );
+      case 2:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Logo de l'entreprise</Text>
+            <Text style={styles.stepDescription}>
+              Ajoutez le logo de votre entreprise pour personnaliser l'application
+            </Text>
+            
+            <TouchableOpacity style={styles.logoButton} onPress={pickLogo}>
+              {formData.logo ? (
+                <Image source={{ uri: formData.logo }} style={styles.logoPreview} />
+              ) : (
+                <>
+                  <Camera size={32} color={colors.textSecondary} />
+                  <Text style={styles.logoButtonText}>Ajouter un logo (optionnel)</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        );
+      case 3:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Numéro SIRET</Text>
+            <Text style={styles.stepDescription}>
+              Ajoutez votre numéro SIRET pour l'afficher sur vos contrats et factures
+            </Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Numéro SIRET (optionnel)</Text>
+              <View style={styles.inputWithIcon}>
+                <Hash size={20} color={colors.textSecondary} />
+                <TextInput
+                  style={styles.inputText}
+                  value={formData.siret}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, siret: text }))}
+                  placeholder="Ex: 12345678901234"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                  maxLength={14}
+                />
+              </View>
+            </View>
+          </View>
+        );
+      case 4:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Adresse de l'entreprise</Text>
+            <Text style={styles.stepDescription}>
+              Indiquez l'adresse de votre entreprise pour l'afficher sur les documents
+            </Text>
+            
+            <AddressAutocomplete
+              value={formData.address}
+              onAddressSelect={address => setFormData(prev => ({ ...prev, address }))}
+              label="Adresse complète *"
+              placeholder="Commencez à taper votre adresse..."
+            />
+          </View>
+        );
+      case 5:
+        return (
+          <View style={styles.stepContent}>
+            <Text style={styles.stepTitle}>Pays d'activité</Text>
+            <Text style={styles.stepDescription}>
+              Sélectionnez le pays principal d'activité de votre entreprise
+            </Text>
+            
+            <View style={styles.countriesGrid}>
+              {COUNTRIES.map((country) => (
+                <TouchableOpacity
+                  key={country.code}
+                  style={[
+                    styles.countryOption,
+                    formData.country === country.code && styles.countryOptionActive
+                  ]}
+                  onPress={() => setFormData(prev => ({ ...prev, country: country.code }))}
+                >
+                  <Text style={styles.countryFlag}>{country.flag}</Text>
+                  <Text style={[
+                    styles.countryName,
+                    formData.country === country.code && styles.countryNameActive
+                  ]}>
+                    {country.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Chargement...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

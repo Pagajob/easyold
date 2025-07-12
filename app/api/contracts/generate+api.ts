@@ -134,11 +134,12 @@ async function sendContractEmail(data: any, contractUrl: string): Promise<boolea
   const { client, vehicle, company } = data;
 
   try {
-    const apiUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}/api/send-email`
-      : process.env.EXPO_PUBLIC_API_URL
-        ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email`
-        : 'https://easygarage-app.vercel.app/api/send-email';
+    const apiUrl =
+      (typeof window !== 'undefined' && window.location && window.location.origin)
+        ? `${window.location.origin}/api/send-email`
+        : process.env.EXPO_PUBLIC_API_URL
+          ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email`
+          : 'https://easygarage-app.vercel.app/api/send-email';
 
     const response = await fetch(apiUrl, {
       method: 'POST',

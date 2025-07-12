@@ -2,6 +2,9 @@
 
 export interface EDLData {
   mode: 'photo' | 'video';
+  // Informations essentielles avant les photos
+  kilometrage?: number;
+  carburant?: number; // 1-4 (1=vide, 4=plein)
   photos: {
     compteur?: string;
     face_avant?: string;
@@ -14,13 +17,6 @@ export interface EDLData {
     additionnelles?: string[];
   };
   video?: string;
-  checklist?: {
-    [key: string]: boolean;
-  };
-  comments?: string;
-  fuelLevel?: number;
-  skipMedia?: boolean;
-  skipReason?: string;
 }
 
 // Clés des photos obligatoires selon le mode
@@ -49,6 +45,8 @@ export const PHOTO_MODE_OBLIGATORY_KEYS = [
 
 // Messages d'erreur pour chaque étape
 export const ERROR_MESSAGES = {
+  kilometrage: 'Le kilométrage de départ est obligatoire.',
+  carburant: 'Le niveau de carburant de départ est obligatoire.',
   compteur: 'La photo du compteur kilométrique est obligatoire.',
   face_avant: 'Photo obligatoire manquante : Face avant',
   avg: 'Photo obligatoire manquante : Côté avant gauche (AVG)',
@@ -79,19 +77,24 @@ export function validateEDL(edlData: EDLData): ValidationResult {
     return { isValid: false, errors, missingSteps };
   }
 
+  // Validation des informations essentielles (toujours obligatoires)
+  if (edlData.kilometrage === undefined || edlData.kilometrage === null) {
+    errors.push(ERROR_MESSAGES.kilometrage);
+    missingSteps.push('kilometrage');
+  }
+
+  if (edlData.carburant === undefined || edlData.carburant === null) {
+    errors.push(ERROR_MESSAGES.carburant);
+    missingSteps.push('carburant');
+  }
+
   // Validation du compteur (toujours obligatoire)
   if (!edlData.photos.compteur) {
     errors.push(ERROR_MESSAGES.compteur);
     missingSteps.push('compteur');
   }
 
-  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
-  if (edlData.skipMedia) {
-    // Vérifier que la raison est fournie
-    if (!edlData.skipReason) {
-      errors.push('Une justification est requise pour l\'absence de photos/vidéo');
-    }
-  } else if (edlData.mode === 'photo') {
+  if (edlData.mode === 'photo') {
     // Validation mode photo : toutes les photos obligatoires
     for (const key of PHOTO_MODE_OBLIGATORY_KEYS) {
       if (key === 'compteur') continue; // Déjà validé
@@ -120,10 +123,12 @@ export function validateEDL(edlData: EDLData): ValidationResult {
  * Vérifie si une étape spécifique est complétée
  */
 export function isStepCompleted(edlData: EDLData, stepKey: string): boolean {
-  // Si l'option "skipMedia" est activée, on considère toutes les étapes comme complétées
-  // sauf le compteur qui reste obligatoire
-  if (edlData.skipMedia && stepKey !== 'compteur') {
-    return true;
+  if (stepKey === 'kilometrage') {
+    return edlData.kilometrage !== undefined && edlData.kilometrage !== null;
+  }
+  
+  if (stepKey === 'carburant') {
+    return edlData.carburant !== undefined && edlData.carburant !== null;
   }
   
   if (stepKey === 'compteur') {
@@ -142,14 +147,9 @@ export function isStepCompleted(edlData: EDLData, stepKey: string): boolean {
  */
 export function calculateProgress(edlData: EDLData): number {
   if (!edlData.mode) return 0;
-
-  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
-  if (edlData.skipMedia) {
-    return edlData.photos.compteur ? 100 : 0;
-  }
   
   const validation = validateEDL(edlData);
-  const totalSteps = edlData.mode === 'photo' ? PHOTO_MODE_OBLIGATORY_KEYS.length : 2; // compteur + vidéo
+  const totalSteps = edlData.mode === 'photo' ? PHOTO_MODE_OBLIGATORY_KEYS.length + 2 : 4; // compteur + vidéo + kilometrage + carburant
   const completedSteps = totalSteps - validation.missingSteps.length;
   
   return Math.round((completedSteps / totalSteps) * 100);
@@ -159,11 +159,6 @@ export function calculateProgress(edlData: EDLData): number {
  * Obtient les étapes restantes à compléter
  */
 export function getRemainingSteps(edlData: EDLData): string[] {
-  // Si l'option "skipMedia" est activée, on vérifie uniquement le compteur
-  if (edlData.skipMedia) {
-    return edlData.photos.compteur ? [] : ['compteur'];
-  }
-  
   const validation = validateEDL(edlData);
   return validation.missingSteps;
 }
@@ -172,6 +167,6 @@ export function getRemainingSteps(edlData: EDLData): string[] {
  * Obtient les étapes complétées
  */
 export function getCompletedSteps(edlData: EDLData): string[] {
-  const allSteps = edlData.mode === 'photo' ? PHOTO_MODE_OBLIGATORY_KEYS : ['compteur', 'video'];
+  const allSteps = edlData.mode === 'photo' ? [...PHOTO_MODE_OBLIGATORY_KEYS, 'kilometrage', 'carburant'] : ['compteur', 'video', 'kilometrage', 'carburant'];
   return allSteps.filter(step => isStepCompleted(edlData, step));
-}
+} 

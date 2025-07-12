@@ -131,10 +131,8 @@ export default function ChargesSection() {
                 style={styles.moreCharges}
                 onPress={() => setAllChargesModalVisible(true)}
               >
-                <Text style={styles.moreChargesText}>
-                  +{charges.length - 3} autres charges
-                </Text>
-                <ChevronRight size={16} color={colors.textSecondary} />
+                <Text style={[styles.moreChargesText, { color: colors.primary, fontWeight: 'bold' }]}>+{charges.length - 3} autres charges</Text>
+                <ChevronRight size={16} color={colors.primary} />
               </TouchableOpacity>
             )}
           </View> 

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
-import { Car, User, Clock, FileText, Download, CreditCard as Edit } from 'lucide-react-native';
+import { Car, User, Clock, FileText, Download, Pencil } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Reservation } from '@/contexts/DataContext';
 import ContractStatusIndicator from './ContractStatusIndicator';
 import { useData } from '@/contexts/DataContext';
+import EditReservationModal from '@/components/reservations/EditReservationModal';
 
 interface ReservationCardProps {
   reservation: Reservation;
@@ -29,6 +30,7 @@ export default function ReservationCard({
   const { colors } = useTheme();
   const { user } = useAuth();
   const { clients } = useData();
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,20 +202,6 @@ export default function ReservationCard({
         </View>
 
         <View style={styles.actionButtons}>
-          {/* Bouton Modifier */}
-          {onEdit && reservation.statut !== 'Terminé' && reservation.statut !== 'Annulé' && (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-            >
-              <Edit size={16} color={colors.background} />
-              <Text style={styles.editButtonText}>Modifier</Text>
-            </TouchableOpacity>
-          )}
-          
           {/* Contract Status */}
           {reservation.contratGenere ? (
             <TouchableOpacity
@@ -245,6 +233,14 @@ export default function ReservationCard({
           )}
         </View>
       </View>
+
+      {/* Modal d'édition de réservation */}
+      <EditReservationModal
+        visible={showEditModal}
+        reservation={reservation}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={() => setShowEditModal(false)}
+      />
     </TouchableOpacity>
   );
 }

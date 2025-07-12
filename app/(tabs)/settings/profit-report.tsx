@@ -9,8 +9,10 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
   ArrowLeft, 
@@ -30,6 +32,7 @@ import { useClients } from '@/hooks/useClients';
 import { useReservations } from '@/hooks/useReservations';
 import { useCharges } from '@/hooks/useCharges';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import ExportSuccessModal from '@/components/ExportSuccessModal';
@@ -44,25 +47,40 @@ export default function ProfitReportScreen() {
   const { colors } = useTheme();
   const { vehicles } = useVehicles();
   const { clients } = useClients();
-  const { reservations, calculateTotalRevenue } = useReservations();
+  const { reservations, calculateTotalRevenue, calculateVehicleOwnerPayments } = useReservations();
   const { charges, calculateMonthlyCharges } = useCharges();
   const { companyInfo } = useCompanySettings();
+  const { userProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [monthPickerVisible, setMonthPickerVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportedFileName, setExportedFileName] = useState('');
+  const [pickerModalVisible, setPickerModalVisible] = useState(false);
   
   // État pour le mois et l'année sélectionnés
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   
+  // Obtenir la date de création du compte
+  const getAccountCreationDate = () => {
+    if (userProfile?.createdAt) {
+      return new Date(userProfile.createdAt);
+    }
+    // Fallback : il y a 2 ans si pas de date de création
+    const fallbackDate = new Date();
+    fallbackDate.setFullYear(fallbackDate.getFullYear() - 2);
+    return fallbackDate;
+  };
+  
+  const accountCreationDate = getAccountCreationDate();
+  
   const screenWidth = Dimensions.get('window').width;
   
   // Fonction pour filtrer les données par mois/année
-  const filterDataByMonth = (data, dateField) => {
-    return data.filter(item => {
+  const filterDataByMonth = (data: any[], dateField: string) => {
+    return data.filter((item: any) => {
       const date = new Date(item[dateField]);
       return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
     });
@@ -76,22 +94,76 @@ export default function ProfitReportScreen() {
   const activeVehicles = vehicles.filter(v => v.statut === 'Disponible' || v.statut === 'Loué').length;
   const totalClients = clients.length;
   const totalReservations = monthlyReservations.length;
-  const completedReservations = monthlyReservations.filter(r => r.statut === 'Terminé').length;
+  const completedReservations = monthlyReservations.filter((r: any) => r.statut === 'Terminé').length;
   
   // Calcul des revenus et charges
   const totalRevenue = monthlyReservations
-    .filter(r => r.statut !== 'Annulé')
-    .reduce((sum, r) => sum + (r.montantLocation || 0), 0);
+    .filter((r: any) => r.statut !== 'Annulé')
+    .reduce((sum: number, r: any) => sum + (r.montantLocation || 0), 0);
   
-  const totalCharges = calculateMonthlyCharges();
-  const netProfit = totalRevenue - totalCharges;
+  // Calculer les charges totales (même logique que le dashboard)
+  let totalCharges = 0;
+  
+  // Ajouter toutes les charges sauf les paiements aux propriétaires
+  totalCharges += charges
+    .filter(c => !c.estPaiementProprietaire)
+    .reduce((sum, c) => {
+      const multiplier = c.frequence === 'Trimestrielle' ? 1/3 : c.frequence === 'Annuelle' ? 1/12 : 1;
+      return sum + (c.montantMensuel * multiplier);
+    }, 0);
+  
+  // Ajouter les coûts fixes des véhicules (assurance, leasing, LLD)
+  vehicles.forEach(vehicle => {
+    // Add assurance mensuelle
+    if (vehicle.assuranceMensuelle) {
+      totalCharges += vehicle.assuranceMensuelle;
+    }
+    
+    // Add costs based on financing type
+    if (vehicle.financement === 'Leasing' && vehicle.mensualites) {
+      totalCharges += vehicle.mensualites;
+    } else if (vehicle.financement === 'LLD' && vehicle.loyerMensuel) {
+      totalCharges += vehicle.loyerMensuel;
+    }
+  });
+  
+  // Calculer les montants reversés aux propriétaires pour ce mois (même logique que le dashboard)
+  const totalOwnerPayments = vehicles
+    .filter(v => v.financement === 'Mise à disposition' && v.prixReverse24h)
+    .reduce((total, vehicle) => {
+      // Calculer les paiements pour ce véhicule pour le mois sélectionné
+      const vehicleReservations = monthlyReservations.filter(r => r.vehiculeId === vehicle.id);
+      
+      // Paiements explicites
+      const explicitPayments = vehicleReservations
+        .filter(r => r.statut !== 'Annulé' && r.montantReverseProprietaire !== undefined)
+        .reduce((sum, r) => sum + (r.montantReverseProprietaire || 0), 0);
+      
+      // Paiements calculés (si pas de montant explicite)
+      const calculatedPayments = vehicleReservations
+        .filter(r => r.statut !== 'Annulé' && r.montantReverseProprietaire === undefined)
+        .reduce((sum, r) => {
+          // Calculer la durée en jours
+          const startDate = new Date(r.dateDebut);
+          const endDate = new Date(r.dateRetourPrevue);
+          const durationMs = endDate.getTime() - startDate.getTime();
+          const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) || 1;
+          
+          // Calculer le paiement basé sur le tarif journalier
+          return sum + ((vehicle.prixReverse24h || 0) * durationDays);
+        }, 0);
+      
+      return total + explicitPayments + calculatedPayments;
+    }, 0);
+  
+  const netProfit = totalRevenue - totalCharges - totalOwnerPayments;
   
   // Données par véhicule
   const vehicleData = vehicles.map(vehicle => {
-    const vehicleReservations = monthlyReservations.filter(r => r.vehiculeId === vehicle.id);
+    const vehicleReservations = monthlyReservations.filter((r: any) => r.vehiculeId === vehicle.id);
     const revenue = vehicleReservations
-      .filter(r => r.statut !== 'Annulé')
-      .reduce((sum, r) => sum + (r.montantLocation || 0), 0);
+      .filter((r: any) => r.statut !== 'Annulé')
+      .reduce((sum: number, r: any) => sum + (r.montantLocation || 0), 0);
     
     // Charges spécifiques au véhicule
     const vehicleCharges = charges
@@ -137,7 +209,7 @@ export default function ProfitReportScreen() {
     datasets: [
       {
         data: vehicleData.slice(0, 5).map(v => v.profit),
-        color: (opacity = 1) => v => v > 0 ? colors.success : colors.error,
+        color: (opacity = 1) => colors.primary,
       }
     ]
   };
@@ -236,15 +308,23 @@ export default function ProfitReportScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.primary,
-      paddingHorizontal: 16,
+      paddingHorizontal: 12, // réduit pour petits écrans
       paddingVertical: 10,
-      borderRadius: 20,
+      borderRadius: 50,
       gap: 8,
+      minWidth: 0,
+      flexShrink: 1, // permet au bouton de rétrécir si nécessaire
+      maxWidth: '90%', // évite le débordement
+      alignSelf: 'flex-end',
     },
     exportButtonText: {
       color: colors.background,
       fontSize: 14,
       fontWeight: '600',
+      flexShrink: 1,
+      flexWrap: 'wrap',
+      minWidth: 0,
+      textAlign: 'center',
     },
     companyInfo: {
       flexDirection: 'row',
@@ -299,7 +379,14 @@ export default function ProfitReportScreen() {
     dateButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 150,
     },
     monthPicker: {
       position: 'absolute',
@@ -583,6 +670,58 @@ export default function ProfitReportScreen() {
       fontSize: 12,
       color: colors.textSecondary,
     },
+    pickerContainer: {
+      width: '100%',
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      minWidth: 150,
+    },
+    picker: {
+      width: '100%',
+      color: colors.text,
+      height: 200,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    pickerModalContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 20,
+      width: '90%',
+      maxWidth: 400,
+      padding: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      elevation: 10,
+    },
+    pickerModalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    pickerModalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    pickerModalCloseButton: {
+      padding: 8,
+    },
+    pickerModalCloseText: {
+      fontSize: 16,
+      color: colors.primary,
+      fontWeight: '600',
+    },
   });
 
   return (
@@ -606,10 +745,7 @@ export default function ProfitReportScreen() {
           {isExporting ? (
             <ActivityIndicator size="small" color={colors.background} />
           ) : (
-            <>
-              <Download size={16} color={colors.background} />
-              <Text style={styles.exportButtonText}>Télécharger</Text>
-            </>
+            <Download size={20} color={colors.background} />
           )}
         </TouchableOpacity>
       </View>
@@ -637,91 +773,119 @@ export default function ProfitReportScreen() {
           <Text style={styles.dateText}>Période du rapport</Text>
           <TouchableOpacity 
             style={styles.dateButton}
-            onPress={() => setMonthPickerVisible(!monthPickerVisible)}
+            onPress={() => setPickerModalVisible(true)}
           >
             <Text style={styles.dateText}>{MONTHS[selectedMonth]} {selectedYear}</Text>
             <ChevronDown size={20} color={colors.text} />
           </TouchableOpacity>
-          
-          {monthPickerVisible && (
-            <View style={styles.monthPicker}>
-              <View style={styles.yearSelector}>
+        </View>
+
+        {/* Modal pour le picker */}
+        <Modal
+          visible={pickerModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setPickerModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.pickerModalContainer}>
+              <View style={styles.pickerModalHeader}>
+                <Text style={styles.pickerModalTitle}>Sélectionner la période</Text>
                 <TouchableOpacity 
-                  style={styles.yearButton}
-                  onPress={() => setSelectedYear(selectedYear - 1)}
+                  style={styles.pickerModalCloseButton}
+                  onPress={() => setPickerModalVisible(false)}
                 >
-                  <ChevronLeft size={20} color={colors.primary} />
-                </TouchableOpacity>
-                <Text style={styles.yearText}>{selectedYear}</Text>
-                <TouchableOpacity 
-                  style={styles.yearButton}
-                  onPress={() => setSelectedYear(selectedYear + 1)}
-                >
-                  <ChevronRight size={20} color={colors.primary} />
+                  <Text style={styles.pickerModalCloseText}>Fermer</Text>
                 </TouchableOpacity>
               </View>
               
-              <View style={styles.monthGrid}>
-                {MONTHS.map((month, index) => (
-                  <TouchableOpacity
-                    key={month}
-                    style={[
-                      styles.monthItem,
-                      selectedMonth === index && styles.monthItemSelected
-                    ]}
-                    onPress={() => {
-                      setSelectedMonth(index);
-                      setMonthPickerVisible(false);
-                    }}
-                  >
-                    <Text 
-                      style={[
-                        styles.monthText,
-                        selectedMonth === index && styles.monthTextSelected
-                      ]}
-                    >
-                      {month}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={`${selectedMonth}-${selectedYear}`}
+                  style={styles.picker}
+                  onValueChange={(itemValue: string) => {
+                    const [month, year] = itemValue.split('-').map(Number);
+                    setSelectedMonth(month);
+                    setSelectedYear(year);
+                  }}
+                >
+                  {(() => {
+                    const months = [];
+                    const currentDate = new Date();
+                    const startDate = new Date(accountCreationDate);
+                    
+                    // Générer tous les mois depuis la création du compte jusqu'à aujourd'hui
+                    let current = new Date(startDate);
+                    current.setDate(1); // Commencer au premier jour du mois
+                    
+                    while (current <= currentDate) {
+                      const month = current.getMonth();
+                      const year = current.getFullYear();
+                      months.push(
+                        <Picker.Item
+                          key={`${month}-${year}`}
+                          label={`${MONTHS[month]} ${year}`}
+                          value={`${month}-${year}`}
+                        />
+                      );
+                      
+                      // Passer au mois suivant
+                      current.setMonth(current.getMonth() + 1);
+                    }
+                    
+                    return months;
+                  })()}
+                </Picker>
               </View>
             </View>
-          )}
-        </View>
+          </View>
+        </Modal>
         
         {/* Statistiques principales */}
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/(tabs)/vehicles')}
+          >
             <View style={styles.statIcon}>
               <Car size={20} color={colors.primary} />
             </View>
             <Text style={styles.statValue}>{totalVehicles}</Text>
             <Text style={styles.statLabel}>Véhicules</Text>
-          </View>
+          </TouchableOpacity>
           
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/(tabs)/vehicles')}
+          >
             <View style={styles.statIcon}>
               <Car size={20} color={colors.success} />
             </View>
             <Text style={styles.statValue}>{activeVehicles}</Text>
             <Text style={styles.statLabel}>Véhicules actifs</Text>
-          </View>
+          </TouchableOpacity>
           
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/(tabs)/clients')}
+          >
             <View style={styles.statIcon}>
               <Users size={20} color={colors.info} />
             </View>
             <Text style={styles.statValue}>{totalClients}</Text>
             <Text style={styles.statLabel}>Clients</Text>
-          </View>
+          </TouchableOpacity>
           
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/(tabs)/reservations')}
+          >
             <View style={styles.statIcon}>
               <Calendar size={20} color={colors.warning} />
             </View>
             <Text style={styles.statValue}>{totalReservations}</Text>
             <Text style={styles.statLabel}>Réservations</Text>
-          </View>
+          </TouchableOpacity>
         </View>
         
         {/* Résumé financier */}
@@ -736,6 +900,11 @@ export default function ProfitReportScreen() {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Charges totales</Text>
             <Text style={styles.summaryValue}>{totalCharges.toLocaleString('fr-FR')} €</Text>
+          </View>
+          
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Reversé aux propriétaires</Text>
+            <Text style={styles.summaryValue}>{totalOwnerPayments.toLocaleString('fr-FR')} €</Text>
           </View>
           
           <View style={[styles.summaryRow, styles.summaryTotal]}>
@@ -754,6 +923,7 @@ export default function ProfitReportScreen() {
               width={screenWidth - 60}
               height={220}
               yAxisLabel="€"
+              yAxisSuffix=""
               chartConfig={{
                 backgroundColor: 'transparent',
                 backgroundGradientFrom: colors.surface,

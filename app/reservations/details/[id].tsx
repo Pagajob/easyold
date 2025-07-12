@@ -147,9 +147,12 @@ import { useTheme } from '@/contexts/ThemeContext';
   // Send contract by email to client
   const sendContractEmail = async (contractUrl: string, email: string, vehicleInfo: string, clientName: string) => {
     try {
-      const apiUrl = Platform.OS === 'web' 
-        ? `${window.location.origin}/api/send-email`
-        : process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email` : 'https://easygarage-app.vercel.app/api/send-email';
+      const apiUrl =
+        (typeof window !== 'undefined' && window.location && window.location.origin)
+          ? `${window.location.origin}/api/send-email`
+          : process.env.EXPO_PUBLIC_API_URL
+            ? `${process.env.EXPO_PUBLIC_API_URL}/api/send-email`
+            : 'https://easygarage-app.vercel.app/api/send-email';
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -215,11 +218,14 @@ import { useTheme } from '@/contexts/ThemeContext';
         };
         
         // Ajouter la charge via le service avec URL absolue
-        const apiUrl = Platform.OS === 'web' 
-          ? `${window.location.origin}/api/charges/add`
-          : process.env.EXPO_PUBLIC_API_URL ? `${process.env.EXPO_PUBLIC_API_URL}/api/charges/add` : 'https://tajirent-app.vercel.app/api/charges/add';
+        const apiUrlCharges =
+          (typeof window !== 'undefined' && window.location && window.location.origin)
+            ? `${window.location.origin}/api/charges/add`
+            : process.env.EXPO_PUBLIC_API_URL
+              ? `${process.env.EXPO_PUBLIC_API_URL}/api/charges/add`
+              : 'https://easygarage-app.vercel.app/api/charges/add';
         
-        fetch(apiUrl, {
+        fetch(apiUrlCharges, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -33,13 +33,24 @@ export class ContractGenerationService {
         })
       });
 
+      const contentType = response.headers.get('content-type');
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate contract');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate contract');
+        } else {
+          const errorText = await response.text();
+          throw new Error('Réponse inattendue du serveur: ' + errorText);
+        }
       }
 
-      const result = await response.json();
-      return result.contractUrl;
+      if (contentType && contentType.includes('application/json')) {
+        const result = await response.json();
+        return result.contractUrl;
+      } else {
+        const errorText = await response.text();
+        throw new Error('Réponse inattendue du serveur: ' + errorText);
+      }
     } catch (error) {
       console.error('Error generating contract PDF:', error);
       throw new Error(`Failed to generate contract: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -90,8 +101,15 @@ export class ContractGenerationService {
         })
       });
 
-      const result = await response.json();
-      return result.success || false;
+      const contentTypeEmail = response.headers.get('content-type');
+      if (contentTypeEmail && contentTypeEmail.includes('application/json')) {
+        const result = await response.json();
+        return result.success || false;
+      } else {
+        const errorText = await response.text();
+        console.error('Réponse inattendue (non-JSON) du serveur email:', errorText);
+        return false;
+      }
     } catch (error) {
       console.error('Error sending contract email:', error);
       return false;

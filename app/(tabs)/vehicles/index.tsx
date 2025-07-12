@@ -84,7 +84,7 @@ export default function VehiclesScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [80, 280], // Collapsed height vs full height
+    outputRange: [60, 220], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -172,141 +172,141 @@ export default function VehiclesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View 
-        style={[styles.header, { height: filterSectionHeight }]}
-        {...panResponder.panHandlers}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <Text style={styles.title}>Parc automobile</Text>
-            <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.collapseButton}
-                onPress={isFilterCollapsed ? expandFilter : collapseFilter}
-              >
-                {isFilterCollapsed ? (
-                  <ChevronDown size={20} color={colors.text} />
-                ) : (
-                  <ChevronUp size={20} color={colors.text} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => router.push('/vehicles/add')}
-              >
-                <Plus size={24} color={colors.background} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <>
-          {/* Animated content that will collapse/expand */}
-          <Animated.View pointerEvents={isFilterCollapsed ? 'none' : 'auto'} style={[
-            styles.collapsibleContent,
-            { opacity: filterHeight }
-          ]}>
-            {/* Statistiques rapides */}
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{stats.total}</Text>
-                <Text style={styles.statLabel}>Total</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.success }]}>{stats.disponible}</Text>
-                <Text style={styles.statLabel}>Disponibles</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.warning }]}>{stats.loue}</Text>
-                <Text style={styles.statLabel}>Loués</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={[styles.statNumber, { color: colors.error }]}>{stats.maintenance}</Text>
-                <Text style={styles.statLabel}>Maintenance</Text>
-              </View>
-            </View>
-
-            {/* Barre de recherche */}
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par marque, modèle ou plaque..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
-            </View>
-
-            {/* Filtres */}
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              style={styles.filtersContainer}
-              contentContainerStyle={styles.filtersContent}
-            >
-              {FILTER_OPTIONS.map((filter) => (
-                <TouchableOpacity
-                  key={filter.key}
-                  style={[
-                    styles.filterButton,
-                    activeFilter === filter.key && styles.filterButtonActive,
-                    activeFilter === filter.key && { backgroundColor: filter.color }
-                  ]}
-                  onPress={() => setActiveFilter(filter.key)}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Animated.View 
+          style={[styles.header, { height: filterSectionHeight }]}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerTop}>
+              <Text style={styles.title}>Ma flotte</Text>
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  style={styles.collapseButton}
+                  onPress={isFilterCollapsed ? expandFilter : collapseFilter}
                 >
-                  <Text style={[
-                    styles.filterText,
-                    activeFilter === filter.key && styles.filterTextActive
-                  ]}>
-                    {filter.key === 'Disponible' ? '✅ ' : 
-                     filter.key === 'Loué' ? '🔄 ' : 
-                     filter.key === 'Maintenance' ? '🔧 ' : 
-                     filter.key === 'Indisponible' ? '⛔ ' : 
-                     '🔍 '}{filter.label}
-                  </Text>
-                  {filter.key !== 'all' && (
-                    <View style={[
-                      styles.filterBadge,
-                      activeFilter === filter.key && styles.filterBadgeActive
-                    ]}>
-                      <Text style={[
-                        styles.filterBadgeText,
-                        activeFilter === filter.key && styles.filterBadgeTextActive
-                      ]}>
-                        {filter.key === 'Disponible' ? stats.disponible :
-                         filter.key === 'Loué' ? stats.loue :
-                         filter.key === 'Maintenance' ? stats.maintenance :
-                         stats.horsService}
-                      </Text>
-                    </View>
+                  {isFilterCollapsed ? (
+                    <ChevronDown size={20} color={colors.text} />
+                  ) : (
+                    <ChevronUp size={20} color={colors.text} />
                   )}
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </Animated.View>
-
-          {/* Always visible search bar when collapsed */}
-          {isFilterCollapsed && (
-            <View style={styles.collapsedSearchContainer}>
-              <View style={styles.searchBar}>
-                <Search size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher par marque, modèle ou plaque..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={() => router.push('/vehicles/add')}
+                >
+                  <Plus size={24} color={colors.background} />
+                </TouchableOpacity>
               </View>
             </View>
-          )}
-          </>
-        </View>
-      </Animated.View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+            <>
+            {/* Animated content that will collapse/expand */}
+            <Animated.View style={[
+              styles.collapsibleContent,
+              { opacity: filterHeight }
+            ]}>
+              {/* Statistiques rapides */}
+              <View style={styles.statsContainer}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{stats.total}</Text>
+                  <Text style={styles.statLabel}>Total</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.success }]}>{stats.disponible}</Text>
+                  <Text style={styles.statLabel}>Disponibles</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.warning }]}>{stats.loue}</Text>
+                  <Text style={styles.statLabel}>Loués</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statNumber, { color: colors.error }]}>{stats.maintenance}</Text>
+                  <Text style={styles.statLabel}>Maintenance</Text>
+                </View>
+              </View>
+
+              {/* Barre de recherche */}
+              <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par marque, modèle ou plaque..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
+
+              {/* Filtres */}
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                style={styles.filtersContainer}
+                contentContainerStyle={styles.filtersContent}
+              >
+                {FILTER_OPTIONS.map((filter) => (
+                  <TouchableOpacity
+                    key={filter.key}
+                    style={[
+                      styles.filterButton,
+                      activeFilter === filter.key && styles.filterButtonActive,
+                      activeFilter === filter.key && { backgroundColor: filter.color }
+                    ]}
+                    onPress={() => setActiveFilter(filter.key)}
+                  >
+                    <Text style={[
+                      styles.filterText,
+                      activeFilter === filter.key && styles.filterTextActive
+                    ]}>
+                      {filter.key === 'Disponible' ? '✅ ' : 
+                       filter.key === 'Loué' ? '🔄 ' : 
+                       filter.key === 'Maintenance' ? '🔧 ' : 
+                       filter.key === 'Indisponible' ? '⛔ ' : 
+                       '🔍 '}{filter.label}
+                    </Text>
+                    {filter.key !== 'all' && (
+                      <View style={[
+                        styles.filterBadge,
+                        activeFilter === filter.key && styles.filterBadgeActive
+                      ]}>
+                        <Text style={[
+                          styles.filterBadgeText,
+                          activeFilter === filter.key && styles.filterBadgeTextActive
+                        ]}>
+                          {filter.key === 'Disponible' ? stats.disponible :
+                           filter.key === 'Loué' ? stats.loue :
+                           filter.key === 'Maintenance' ? stats.maintenance :
+                           stats.horsService}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Animated.View>
+
+            {/* Always visible search bar when collapsed */}
+            {isFilterCollapsed && (
+              <View style={styles.collapsedSearchContainer}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={colors.textSecondary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher par marque, modèle ou plaque..."
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+              </View>
+            )}
+            </>
+          </View>
+        </Animated.View>
+
         {filteredVehicles.length === 0 ? (
           <View style={styles.emptyState}>
             <Car size={64} color={colors.textSecondary} />
@@ -382,13 +382,12 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 0 : 0,
   },
-  header: {
-    backgroundColor: colors.surface,
-    paddingTop: 16,
-    borderBottomColor: colors.border + '60',
-    overflow: 'hidden',
-  },
+  headerSafe: { backgroundColor: colors.background },
+  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
+  title: { fontSize: 28, fontWeight: '800', color: colors.text, marginTop: 0 },
+  scrollContent: { paddingBottom: 100, paddingTop: 8 },
   headerContent: {
     flex: 1,
   },
@@ -400,8 +399,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    zIndex: 10, // Ensure buttons stay on top
+    marginBottom: 16,
   },
   headerActions: {
     flexDirection: 'row',
@@ -417,11 +415,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderColor: colors.border + '60',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
   },
   addButton: {
     backgroundColor: colors.primary,
@@ -462,7 +455,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   collapsedSearchContainer: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 12,
     zIndex: 10,
   },
   searchBar: {
@@ -483,19 +476,17 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filtersContainer: {
     paddingLeft: 20,
-    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 20,
     gap: 8,
-    paddingBottom: 8,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.border,
+    backgroundColor: colors.surface,
     borderRadius: 28,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
   },
@@ -508,7 +499,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
   },
   filterTextActive: {
-    color: colors.background, 
+    color: colors.background,
   },
   filterBadge: {
     backgroundColor: colors.border,

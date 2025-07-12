@@ -9,7 +9,7 @@ import {
   StatusBar,
   Platform
 } from 'react-native';
-import { X, CircleAlert as AlertCircle, CircleCheck as CheckCircle, Info, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export type BannerType = 'success' | 'error' | 'warning' | 'info';
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 12 : 12,
+    paddingTop: Platform.OS === 'ios' ? 50 : 12,
     minHeight: 60,
   },
   iconContainer: {
