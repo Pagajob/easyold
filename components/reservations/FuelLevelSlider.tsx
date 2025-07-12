@@ -6,13 +6,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 interface FuelLevelSliderProps {
   value: number;
-  onChange: (value: number) => void;
+  onValueChange: (value: number) => void;
   maxLevel?: number;
 }
 
 export default function FuelLevelSlider({
   value,
-  onChange,
+  onValueChange,
   maxLevel = 8,
 }: FuelLevelSliderProps) {
   const { colors } = useTheme();
@@ -29,7 +29,7 @@ export default function FuelLevelSlider({
             maximumValue={maxLevel}
             step={1}
             value={value}
-            onValueChange={onChange}
+            onValueChange={onValueChange}
             minimumTrackTintColor={colors.primary}
             maximumTrackTintColor={colors.border}
             thumbTintColor={colors.primary}

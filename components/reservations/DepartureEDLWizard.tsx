@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera, Check, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import CameraView from '../CameraView';
 import { useTheme } from '../../contexts/ThemeContext';
+import FuelLevelSlider from './FuelLevelSlider';
 
 interface DepartureEDLWizardProps {
   reservation: any;
@@ -285,25 +286,11 @@ export default function DepartureEDLWizard({ reservation, onComplete, onCancel }
           >
             <Text style={styles.retakeButtonText}>Reprendre la photo</Text>
           </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
-  const renderChecklistStep = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Vérifications</Text>
-
-      <View style={styles.checklistContainer}>
-        {CHECKLIST_ITEMS.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={styles.checklistItem}
-            onPress={() => handleChecklistChange(item.key, !edlData.checklist[item.key as keyof typeof edlData.checklist])}
-          >
-            <View style={[styles.checkbox, edlData.checklist[item.key as keyof typeof edlData.checklist] && styles.checkboxChecked]}>
-              {edlData.checklist[item.key as keyof typeof edlData.checklist] && <Check size={16} color={colors.background} />}
-            </View>
+            <FuelLevelSlider
+              value={edlData.fuelLevel}
+              onValueChange={(value) => setEdlData(prev => ({ ...prev, fuelLevel: value }))}
+              maxLevel={8}
+            />
             <Text style={styles.checklistLabel}>
               {item.label}
               {item.required && <Text style={styles.requiredMark}> *</Text>}
@@ -709,32 +696,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 12,
-  },
-  fuelSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  fuelLevel: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fuelLevelActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  fuelLevelText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  fuelLevelTextActive: {
-    color: colors.background,
+    marginBottom: 8,
   },
   commentsInput: {
     borderWidth: 1,
