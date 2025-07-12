@@ -84,7 +84,7 @@ export default function VehiclesScreen() {
   // Calculate the height for the filter section
   const filterSectionHeight = filterHeight.interpolate({
     inputRange: [0, 1],
-    outputRange: [80, 240], // Collapsed height vs full height
+    outputRange: [80, 280], // Collapsed height vs full height
   });
 
   if (loading) {
@@ -483,10 +483,12 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filtersContainer: {
     paddingLeft: 20,
+    marginBottom: 16,
   },
   filtersContent: {
     paddingRight: 20,
     gap: 8,
+    paddingBottom: 8,
   },
   filterButton: {
     flexDirection: 'row',
