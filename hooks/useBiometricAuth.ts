@@ -29,6 +29,18 @@ export function useBiometricAuth() {
     try {
       setIsLoading(true);
       
+      // Sur le web, la biométrie n'est pas supportée
+      if (Platform.OS === 'web') {
+        setBiometricState({
+          isAvailable: false,
+          isEnrolled: false,
+          supportedTypes: [],
+          isEnabled: false,
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       // Vérifier si la biométrie est disponible sur l'appareil
       const isAvailable = await LocalAuthentication.hasHardwareAsync();
       
@@ -62,6 +74,11 @@ export function useBiometricAuth() {
 
   // Activer la biométrie pour l'utilisateur
   const enableBiometric = async (userId: string) => {
+    // Sur le web, retourner false car non supporté
+    if (Platform.OS === 'web') {
+      return false;
+    }
+    
     try {
       // Demander l'authentification biométrique pour activer
       const result = await LocalAuthentication.authenticateAsync({
@@ -91,6 +108,11 @@ export function useBiometricAuth() {
 
   // Désactiver la biométrie
   const disableBiometric = async () => {
+    // Sur le web, retourner true car rien à faire
+    if (Platform.OS === 'web') {
+      return true;
+    }
+    
     try {
       await SecureStore.deleteItemAsync('biometric_user_id');
       await SecureStore.deleteItemAsync('biometric_enabled');
@@ -109,6 +131,11 @@ export function useBiometricAuth() {
 
   // Authentifier avec la biométrie
   const authenticateWithBiometric = async (): Promise<string | null> => {
+    // Sur le web, retourner null car non supporté
+    if (Platform.OS === 'web') {
+      return null;
+    }
+    
     try {
       // Vérifier si la biométrie est activée
       const isEnabled = await SecureStore.getItemAsync('biometric_enabled');
@@ -145,6 +172,11 @@ export function useBiometricAuth() {
 
   // Obtenir le nom du type d'authentification
   const getBiometricTypeName = () => {
+    // Sur le web, retourner un message par défaut
+    if (Platform.OS === 'web') {
+      return 'Biométrie non disponible';
+    }
+    
     if (Platform.OS === 'ios') {
       if (biometricState.supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
         return 'Face ID';
