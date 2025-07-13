@@ -125,7 +125,7 @@ export default function ReservationsScreen() {
   const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ReservationsCalendarModal visible={calendarVisible} onClose={() => setCalendarVisible(false)} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View 
@@ -332,7 +332,7 @@ export default function ReservationsScreen() {
           onClose={() => setSuccessToastVisible(false)}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -340,7 +340,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
+    paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
   },
   headerSafe: { backgroundColor: colors.background },
   header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
@@ -362,7 +362,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   collapseButton: {
     width: 40,
@@ -384,6 +384,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   calendarButton: {
     marginRight: 12,
+    marginLeft: 8,
     backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 8,

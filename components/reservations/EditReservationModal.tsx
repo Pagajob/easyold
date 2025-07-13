@@ -279,15 +279,13 @@ export default function EditReservationModal({
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      backdropFilter: 'blur(10px)',
+      // backdropFilter supprimé car non supporté sur React Native
     },
     modalContainer: {
       width: '90%',
       maxWidth: 500,
       maxHeight: '85%',
-      backgroundColor: Platform.OS === 'ios' 
-        ? 'rgba(255, 255, 255, 0.85)' 
-        : colors.background,
+      backgroundColor: colors.background,
       borderRadius: 20,
       overflow: 'hidden',
       shadowColor: '#000',
@@ -567,259 +565,254 @@ export default function EditReservationModal({
             }
           ]}
         >
-          <Pressable onPress={e => e.stopPropagation()}>
-            <View style={styles.header}>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <X size={18} color={colors.text} />
-              </TouchableOpacity>
-              
-              <Text style={styles.title}>Modifier la réservation</Text>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.saveButton, 
-                  (isSubmitting || !canEdit()) && styles.saveButtonDisabled
-                ]}
-                onPress={handleSubmit}
-                disabled={isSubmitting || !canEdit()}
-              >
-                <Save size={18} color={colors.background} />
-              </TouchableOpacity>
+          {/* Fin debug, on réintègre le vrai formulaire ci-dessous */}
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <X size={18} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Modifier la réservation</Text>
+            <TouchableOpacity 
+              style={[
+                styles.saveButton, 
+                (isSubmitting || !canEdit()) && styles.saveButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={isSubmitting || !canEdit()}
+            >
+              <Save size={18} color={colors.background} />
+            </TouchableOpacity>
+          </View>
+          {!canEdit() && (
+            <View style={styles.disabledOverlay}>
+              <Text style={styles.disabledText}>
+                Les réservations terminées ou annulées ne peuvent pas être modifiées
+              </Text>
+            </View>
+          )}
+          <ScrollView style={{flex: 1}} contentContainerStyle={styles.scrollContent}>
+            {/* Informations véhicule */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Véhicule</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Sélectionner un véhicule</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                  {vehicles.map((v) => (
+                    <TouchableOpacity
+                      key={v.id}
+                      style={[styles.infoCard, {
+                        borderWidth: 2,
+                        borderColor: formData.vehiculeId === v.id ? colors.primary : 'transparent',
+                        backgroundColor: formData.vehiculeId === v.id ? colors.primary + '10' : colors.surface,
+                        marginRight: 12,
+                        minWidth: 180
+                      }]}
+                      onPress={() => {
+                        setFormData(prev => ({ ...prev, vehiculeId: v.id }));
+                        setSelectedVehicle(v);
+                      }}
+                      disabled={!canEdit()}
+                    >
+                      <View style={styles.infoIcon}>
+                        <Car size={20} color={colors.primary} />
+                      </View>
+                      <View style={styles.infoDetails}>
+                        <Text style={styles.infoTitle}>{v.marque} {v.modele}</Text>
+                        <Text style={styles.infoSubtitle}>{v.immatriculation}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
             </View>
             
-            {!canEdit() && (
-              <View style={styles.disabledOverlay}>
-                <Text style={styles.disabledText}>
-                  Les réservations terminées ou annulées ne peuvent pas être modifiées
-                </Text>
-              </View>
-            )}
-            
-            <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-              {/* Informations véhicule */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Véhicule</Text>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Sélectionner un véhicule</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
-                    {vehicles.map((v) => (
-                      <TouchableOpacity
-                        key={v.id}
-                        style={[styles.infoCard, {
-                          borderWidth: 2,
-                          borderColor: formData.vehiculeId === v.id ? colors.primary : 'transparent',
-                          backgroundColor: formData.vehiculeId === v.id ? colors.primary + '10' : colors.surface,
-                          marginRight: 12,
-                          minWidth: 180
-                        }]}
-                        onPress={() => {
-                          setFormData(prev => ({ ...prev, vehiculeId: v.id }));
-                          setSelectedVehicle(v);
-                        }}
-                        disabled={!canEdit()}
-                      >
-                        <View style={styles.infoIcon}>
-                          <Car size={20} color={colors.primary} />
-                        </View>
-                        <View style={styles.infoDetails}>
-                          <Text style={styles.infoTitle}>{v.marque} {v.modele}</Text>
-                          <Text style={styles.infoSubtitle}>{v.immatriculation}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              </View>
-              
-              {/* Informations client */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Client</Text>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Sélectionner un client</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
-                    {clients.map((c) => (
-                      <TouchableOpacity
-                        key={c.id}
-                        style={[styles.infoCard, {
-                          borderWidth: 2,
-                          borderColor: formData.clientId === c.id ? colors.primary : 'transparent',
-                          backgroundColor: formData.clientId === c.id ? colors.primary + '10' : colors.surface,
-                          marginRight: 12,
-                          minWidth: 180
-                        }]}
-                        onPress={() => {
-                          setFormData(prev => ({ ...prev, clientId: c.id }));
-                          setSelectedClient(c);
-                        }}
-                        disabled={!canEdit()}
-                      >
-                        <View style={styles.infoIcon}>
-                          <User size={20} color={colors.primary} />
-                        </View>
-                        <View style={styles.infoDetails}>
-                          <Text style={styles.infoTitle}>{c.prenom} {c.nom}</Text>
-                          <Text style={styles.infoSubtitle}>{c.telephone || c.email || ''}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              </View>
-              
-              {/* Dates et heures */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Dates et heures</Text>
-                <TouchableOpacity 
-                  style={styles.dateButton}
-                  onPress={() => setShowDualDatePicker(true)}
-                >
-                  <Calendar size={20} color={colors.primary} />
-                  <Text style={styles.dateButtonText}>
-                    {formData.dateDebut && formData.dateRetourPrevue
-                      ? `Du ${new Date(formData.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(formData.dateRetourPrevue).toLocaleDateString('fr-FR')}`
-                      : 'Sélectionner les dates'
-                    }
-                  </Text>
-                  <Clock size={20} color={colors.primary} />
-                </TouchableOpacity>
-                
-                {formData.dateDebut && formData.dateRetourPrevue && (
-                  <View style={styles.summaryCard}>
-                    <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Durée:</Text>
-                      <Text style={styles.summaryValue}>{calculateDays()} jour(s)</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                      <Text style={styles.summaryLabel}>Kilométrage inclus:</Text>
-                      <TextInput
-                        style={[styles.input, { width: 100, textAlign: 'right', paddingVertical: 4, fontSize: 14 }]}
-                        value={formData.kilometrageInclus?.toString() || calculateIncludedKm().toString()}
-                        onChangeText={text => setFormData(prev => ({ ...prev, kilometrageInclus: parseInt(text) || 0 }))}
-                        keyboardType="numeric"
-                        editable={canEdit()}
-                      />
-                      <Text style={styles.summaryLabel}>km</Text>
-                    </View>
-                    {isWeekendRental() && (
-                      <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Type:</Text>
-                        <Text style={[styles.summaryValue, { color: colors.primary }]}>Week-end</Text>
+            {/* Informations client */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Client</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Sélectionner un client</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                  {clients.map((c) => (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.infoCard, {
+                        borderWidth: 2,
+                        borderColor: formData.clientId === c.id ? colors.primary : 'transparent',
+                        backgroundColor: formData.clientId === c.id ? colors.primary + '10' : colors.surface,
+                        marginRight: 12,
+                        minWidth: 180
+                      }]}
+                      onPress={() => {
+                        setFormData(prev => ({ ...prev, clientId: c.id }));
+                        setSelectedClient(c);
+                      }}
+                      disabled={!canEdit()}
+                    >
+                      <View style={styles.infoIcon}>
+                        <User size={20} color={colors.primary} />
                       </View>
-                    )}
+                      <View style={styles.infoDetails}>
+                        <Text style={styles.infoTitle}>{c.prenom} {c.nom}</Text>
+                        <Text style={styles.infoSubtitle}>{c.telephone || c.email || ''}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+            
+            {/* Dates et heures */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Dates et heures</Text>
+              <TouchableOpacity 
+                style={styles.dateButton}
+                onPress={() => setShowDualDatePicker(true)}
+              >
+                <Calendar size={20} color={colors.primary} />
+                <Text style={styles.dateButtonText}>
+                  {formData.dateDebut && formData.dateRetourPrevue
+                    ? `Du ${new Date(formData.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(formData.dateRetourPrevue).toLocaleDateString('fr-FR')}`
+                    : 'Sélectionner les dates'
+                  }
+                </Text>
+                <Clock size={20} color={colors.primary} />
+              </TouchableOpacity>
+              
+              {formData.dateDebut && formData.dateRetourPrevue && (
+                <View style={styles.summaryCard}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Durée:</Text>
+                    <Text style={styles.summaryValue}>{calculateDays()} jour(s)</Text>
                   </View>
-                )}
-              </View>
-              
-              {/* Type de contrat */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Type de contrat</Text>
-                <View style={styles.contractTypeSelector}>
-                  {['Location', 'Prêt'].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.contractTypeOption,
-                        formData.typeContrat === type && styles.contractTypeOptionActive
-                      ]}
-                      onPress={() => setFormData(prev => ({ ...prev, typeContrat: type as 'Location' | 'Prêt' }))}
-                      disabled={!canEdit()}
-                    >
-                      <Text style={[
-                        styles.contractTypeText,
-                        formData.typeContrat === type && styles.contractTypeTextActive
-                      ]}>
-                        {type === 'Location' ? '💰 Location' : '🤝 Prêt'}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Kilométrage inclus:</Text>
+                    <TextInput
+                      style={[styles.input, { width: 100, textAlign: 'right', paddingVertical: 4, fontSize: 14 }]}
+                      value={formData.kilometrageInclus?.toString() || calculateIncludedKm().toString()}
+                      onChangeText={text => setFormData(prev => ({ ...prev, kilometrageInclus: parseInt(text) || 0 }))}
+                      keyboardType="numeric"
+                      editable={canEdit()}
+                    />
+                    <Text style={styles.summaryLabel}>km</Text>
+                  </View>
+                  {isWeekendRental() && (
+                    <View style={styles.summaryRow}>
+                      <Text style={styles.summaryLabel}>Type:</Text>
+                      <Text style={[styles.summaryValue, { color: colors.primary }]}>Week-end</Text>
+                    </View>
+                  )}
                 </View>
+              )}
+            </View>
+            
+            {/* Type de contrat */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Type de contrat</Text>
+              <View style={styles.contractTypeSelector}>
+                {['Location', 'Prêt'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.contractTypeOption,
+                      formData.typeContrat === type && styles.contractTypeOptionActive
+                    ]}
+                    onPress={() => setFormData(prev => ({ ...prev, typeContrat: type as 'Location' | 'Prêt' }))}
+                    disabled={!canEdit()}
+                  >
+                    <Text style={[
+                      styles.contractTypeText,
+                      formData.typeContrat === type && styles.contractTypeTextActive
+                    ]}>
+                      {type === 'Location' ? '💰 Location' : '🤝 Prêt'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              
-              {/* Statut */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Statut</Text>
-                <View style={styles.statusSelector}>
-                  {['Planifiée', 'Confirmé', 'En cours', 'Terminé', 'Annulé'].map((status) => (
-                    <TouchableOpacity
-                      key={status}
-                      style={[
-                        styles.statusOption,
-                        formData.statut === status && styles.statusOptionActive
-                      ]}
-                      onPress={() => setFormData(prev => ({ ...prev, statut: status as any }))}
-                      disabled={!canEdit()}
-                    >
-                      <Text style={[
-                        styles.statusText,
-                        formData.statut === status && styles.statusTextActive
-                      ]}>
-                        {status === 'Planifiée' ? '🗓️ ' : 
-                         status === 'Confirmé' ? '✅ ' : 
-                         status === 'En cours' ? '🚗 ' : 
-                         status === 'Terminé' ? '✔️ ' : 
-                         status === 'Annulé' ? '❌ ' : ''}{status}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+            </View>
+            
+            {/* Statut */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Statut</Text>
+              <View style={styles.statusSelector}>
+                {['Planifiée', 'Confirmé', 'En cours', 'Terminé', 'Annulé'].map((status) => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.statusOption,
+                      formData.statut === status && styles.statusOptionActive
+                    ]}
+                    onPress={() => setFormData(prev => ({ ...prev, statut: status as any }))}
+                    disabled={!canEdit()}
+                  >
+                    <Text style={[
+                      styles.statusText,
+                      formData.statut === status && styles.statusTextActive
+                    ]}>
+                      {status === 'Planifiée' ? '🗓️ ' : 
+                       status === 'Confirmé' ? '✅ ' : 
+                       status === 'En cours' ? '🚗 ' : 
+                       status === 'Terminé' ? '✔️ ' : 
+                       status === 'Annulé' ? '❌ ' : ''}{status}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              
-              {/* Prix */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Prix</Text>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Montant de la location (€)</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.montantLocation?.toString() || ''}
-                    onChangeText={(text) => setFormData(prev => ({ 
-                      ...prev, 
-                      montantLocation: parseFloat(text) || 0 
-                    }))}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={colors.textSecondary}
-                    editable={canEdit()}
-                  />
-                </View>
-              </View>
-              
-              {/* Notes */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Notes</Text>
+            </View>
+            
+            {/* Prix */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Prix</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Montant de la location (€)</Text>
                 <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={formData.notes?.toString() || ''}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
-                  placeholder="Notes sur la réservation..."
+                  style={styles.input}
+                  value={formData.montantLocation?.toString() || ''}
+                  onChangeText={(text) => setFormData(prev => ({ 
+                    ...prev, 
+                    montantLocation: parseFloat(text) || 0 
+                  }))}
+                  keyboardType="numeric"
+                  placeholder="0"
                   placeholderTextColor={colors.textSecondary}
-                  multiline
-                  numberOfLines={4}
                   editable={canEdit()}
                 />
               </View>
-            </ScrollView>
-            
-            <View style={styles.footer}>
-              <TouchableOpacity 
-                style={[
-                  styles.submitButton,
-                  (isSubmitting || !canEdit()) && styles.submitButtonDisabled
-                ]}
-                onPress={handleSubmit}
-                disabled={isSubmitting || !canEdit()}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={colors.background} />
-                ) : (
-                  <>
-                    <Save size={20} color={colors.background} />
-                    <Text style={styles.submitButtonText}>Enregistrer les modifications</Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
-          </Pressable>
+            
+            {/* Notes */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.notes?.toString() || ''}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                placeholder="Notes sur la réservation..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={4}
+                editable={canEdit()}
+              />
+            </View>
+          </ScrollView>
+          
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              style={[
+                styles.submitButton,
+                (isSubmitting || !canEdit()) && styles.submitButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={isSubmitting || !canEdit()}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={colors.background} />
+              ) : (
+                <>
+                  <Save size={20} color={colors.background} />
+                  <Text style={styles.submitButtonText}>Enregistrer les modifications</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </Pressable>
       

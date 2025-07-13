@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions, Alert } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useReservations } from '@/hooks/useReservations';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useClients } from '@/hooks/useClients';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { X, ChevronLeft, ChevronRight, Car, Clock, User } from 'lucide-react-native';
 import { router } from 'expo-router';
 
-const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
@@ -17,36 +17,49 @@ function getMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const days = [];
-  for (let i = 1; i <= lastDay.getDate(); i++) {
-    days.push(new Date(year, month, i));
+  
+  // Ajouter les jours vides du début
+  const startingDayOfWeek = firstDay.getDay();
+  const adjustedStartingDay = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+  for (let i = 0; i < adjustedStartingDay; i++) {
+    days.push(null);
   }
+  
+  // Ajouter tous les jours du mois
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    days.push(new Date(year, month, day));
+  }
+  
+  // Compléter avec des jours vides à la fin
+  const totalCells = Math.ceil(days.length / 7) * 7;
+  while (days.length < totalCells) {
+    days.push(null);
+  }
+  
   return days;
 }
 
-function getWeeks(year: number, month: number) {
-  // Retourne un tableau de semaines, chaque semaine est un tableau de 7 dates (ou null)
-  const days = getMonthDays(year, month);
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-  const calendarCells = Array(offset).fill(null).concat(days);
-  while (calendarCells.length % 7 !== 0) calendarCells.push(null);
-  const weeks = [];
-  for (let i = 0; i < calendarCells.length; i += 7) {
-    weeks.push(calendarCells.slice(i, i + 7));
+function getReservationColor(status: string, colors: any) {
+  switch (status) {
+    case 'Confirmé': return colors.success;
+    case 'En cours': return colors.warning;
+    case 'Planifiée': return colors.info;
+    case 'Terminé': return colors.textSecondary;
+    case 'Annulé': return colors.error;
+    default: return colors.primary;
   }
-  return weeks;
 }
 
-function getReservationColor(res, colors) {
-  if (res.statut === 'Confirmé') return colors.success + 'E0';
-  if (res.statut === 'Annulé') return colors.error + 'B0';
-  if (res.statut === 'En cours') return colors.info + 'E0';
-  if (res.statut === 'Terminé') return colors.textSecondary + '80';
-  return colors.primary + 'E0';
-}
-
-function getShortClientName(name) {
+function getShortClientName(name: string) {
   return name.split(' ')[0];
+}
+
+function getShortVehicleName(vehicleName: string) {
+  const parts = vehicleName.split(' ');
+  if (parts.length >= 2) {
+    return `${parts[0]} ${parts[1]}`;
+  }
+  return vehicleName;
 }
 
 export default function ReservationsCalendarModal({ visible, onClose }: { visible: boolean, onClose: () => void }) {
@@ -54,64 +67,68 @@ export default function ReservationsCalendarModal({ visible, onClose }: { visibl
   const { reservations } = useReservations();
   const { getVehicleName } = useVehicles();
   const { getClientName } = useClients();
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedReservation, setSelectedReservation] = useState<any>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const weeks = getWeeks(year, month);
+  const days = getMonthDays(year, month);
 
-  // Préparer les réservations à afficher (celles qui touchent ce mois)
-  const reservationsToShow = reservations.filter(res => {
+  // Filtrer les réservations pour le mois actuel
+  const monthReservations = reservations.filter(res => {
     const start = new Date(res.dateDebut);
-    const end = new Date(res.dateFin);
+    const end = new Date(res.dateRetourPrevue);
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+    
     return (
-      (start.getFullYear() === year && start.getMonth() === month) ||
-      (end.getFullYear() === year && end.getMonth() === month) ||
-      (start < new Date(year, month + 1, 1) && end >= new Date(year, month, 1))
+      (start <= monthEnd && end >= monthStart) &&
+      res.statut !== 'Annulé'
     );
   });
 
-  // Pour chaque semaine, placer les réservations sur des lignes (éviter le chevauchement)
-  function getWeekReservations(week) {
-    // Pour chaque réservation, déterminer si elle occupe cette semaine
-    const weekStart = week[0] ? new Date(week[0]) : null;
-    const weekEnd = week[6] ? new Date(week[6]) : null;
-    if (!weekStart || !weekEnd) return [];
-    // Sélectionner les réservations qui touchent cette semaine
-    const weekResas = reservationsToShow.filter(res => {
+  // Obtenir les réservations pour une date spécifique
+  const getReservationsForDate = (date: Date) => {
+    if (!date) return [];
+    
+    const dateString = date.toISOString().split('T')[0];
+    return monthReservations.filter(res => {
       const start = new Date(res.dateDebut);
-      const end = new Date(res.dateFin);
-      return end >= weekStart && start <= weekEnd;
+      const end = new Date(res.dateRetourPrevue);
+      const checkDate = new Date(dateString);
+      
+      return checkDate >= start && checkDate <= end;
     });
-    // Placement sur lignes (greedy)
-    const lines = [];
-    weekResas.forEach(res => {
-      const start = new Date(res.dateDebut);
-      const end = new Date(res.dateFin);
-      // Calculer la colonne de début et de fin dans la semaine
-      const startCol = Math.max(0, Math.floor((start - weekStart) / (1000*60*60*24)));
-      const endCol = Math.min(6, Math.floor((end - weekStart) / (1000*60*60*24)));
-      // Chercher une ligne libre
-      let placed = false;
-      for (let l = 0; l < lines.length; l++) {
-        let conflict = false;
-        for (let c = startCol; c <= endCol; c++) {
-          if (lines[l][c]) { conflict = true; break; }
-        }
-        if (!conflict) {
-          for (let c = startCol; c <= endCol; c++) lines[l][c] = res;
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        const newLine = Array(7).fill(null);
-        for (let c = startCol; c <= endCol; c++) newLine[c] = res;
-        lines.push(newLine);
-      }
-    });
-    return lines;
-  }
+  };
+
+  const handleReservationPress = (reservation: any) => {
+    setSelectedReservation(reservation);
+  };
+
+  const handleViewReservationDetails = () => {
+    if (selectedReservation) {
+      onClose();
+      setTimeout(() => {
+        router.push(`/reservations/details/${selectedReservation.id}`);
+      }, 300);
+    }
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setMonth(currentDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(currentDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const isToday = (date: Date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
 
   const styles = createStyles(colors);
   const screenHeight = Dimensions.get('window').height;
@@ -123,72 +140,85 @@ export default function ReservationsCalendarModal({ visible, onClose }: { visibl
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
-        <View style={[styles.modal, { maxHeight: screenHeight * 0.92 }]}> 
+      <TouchableOpacity activeOpacity={1} style={styles.backdrop} onPress={onClose}>
+        <View style={[styles.modal, { maxHeight: screenHeight * 0.92 }]} pointerEvents="box-none">
           <View style={styles.header}>
             <View style={styles.headerCenter}>
-              <TouchableOpacity onPress={() => setCurrentDate(new Date(year, month - 1, 1))}>
+              <TouchableOpacity onPress={() => navigateMonth('prev')}>
                 <ChevronLeft size={26} color={colors.text} />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>{MONTHS[month]} {year}</Text>
-              <TouchableOpacity onPress={() => setCurrentDate(new Date(year, month + 1, 1))}>
+              <TouchableOpacity onPress={() => navigateMonth('next')}>
                 <ChevronRight size={26} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={26} color={colors.text} />
-            </TouchableOpacity>
           </View>
+
           <View style={styles.daysRow}>
-            {DAYS.map((d, i) => (
-              <Text key={i} style={styles.dayLabel}>{d}</Text>
+            {DAYS.map((day, i) => (
+              <Text key={i} style={styles.dayLabel}>{day}</Text>
             ))}
           </View>
+
           <ScrollView contentContainerStyle={styles.calendarContent} showsVerticalScrollIndicator={false}>
-            <View>
-              {weeks.map((week, wIdx) => {
-                const weekLines = getWeekReservations(week);
+            <View style={styles.calendarGrid}>
+              {days.map((date, index) => {
+                const dateReservations = getReservationsForDate(date);
+                const isTodayDate = isToday(date);
+                
                 return (
-                  <View key={wIdx} style={styles.weekRow}>
-                    {/* Jours de la semaine (cases vides) */}
-                    <View style={styles.weekDaysRow}>
-                      {week.map((date, dIdx) => (
-                        <View key={dIdx} style={styles.cell}>
-                          {date && <Text style={styles.cellDate}>{date.getDate()}</Text>}
+                  <View key={index} style={[styles.cell, isTodayDate && styles.todayCell]}>
+                    {date && (
+                      <>
+                        <Text style={[styles.cellDate, isTodayDate && styles.todayDate]}>
+                          {date.getDate()}
+                        </Text>
+                        
+                        <View style={styles.reservationsContainer}>
+                          {dateReservations.map((reservation, resIndex) => {
+                            const vehicleName = getVehicleName(reservation.vehiculeId);
+                            const clientName = getClientName(reservation.clientId);
+                            const isStartDate = new Date(reservation.dateDebut).toDateString() === date.toDateString();
+                            
+                            return (
+                              <TouchableOpacity
+                                key={resIndex}
+                                style={[
+                                  styles.reservationTag,
+                                  { backgroundColor: getReservationColor(reservation.statut, colors) + '20' }
+                                ]}
+                                onPress={() => handleReservationPress(reservation)}
+                                activeOpacity={0.7}
+                              >
+                                {isStartDate && (
+                                  <View style={styles.timeContainer}>
+                                    <Clock size={10} color={getReservationColor(reservation.statut, colors)} />
+                                    <Text style={[styles.timeText, { color: getReservationColor(reservation.statut, colors) }]}>
+                                      {reservation.heureDebut}
+                                    </Text>
+                                  </View>
+                                )}
+                                
+                                <View style={styles.vehicleContainer}>
+                                  <Car size={10} color={getReservationColor(reservation.statut, colors)} />
+                                  <Text style={[styles.vehicleText, { color: getReservationColor(reservation.statut, colors) }]} numberOfLines={1}>
+                                    {getShortVehicleName(vehicleName)}
+                                  </Text>
+                                </View>
+                                
+
+                              </TouchableOpacity>
+                            );
+                          })}
                         </View>
-                      ))}
-                    </View>
-                    {/* Lignes de réservations */}
-                    {weekLines.map((line, lIdx) => (
-                      <View key={lIdx} style={styles.resaLineRow}>
-                        {line.map((res, dIdx) => {
-                          if (!res) return <View key={dIdx} style={styles.resaCell} />;
-                          // Afficher la barre seulement au début
-                          if (dIdx > 0 && res === line[dIdx-1]) return null;
-                          // Largeur en colonnes
-                          let width = 1;
-                          for (let k = dIdx+1; k < 7 && line[k] === res; k++) width++;
-                          const veh = getVehicleName(res.vehiculeId);
-                          const client = getShortClientName(getClientName(res.clientId));
-                          return (
-                            <View
-                              key={dIdx}
-                              style={[styles.resaBar, {
-                                backgroundColor: getReservationColor(res, colors),
-                                flex: width,
-                              }]}
-                            >
-                              <Text style={styles.resaBarText} numberOfLines={1}>{veh} {client}</Text>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    ))}
+                      </>
+                    )}
                   </View>
                 );
               })}
             </View>
           </ScrollView>
+
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => {
@@ -199,7 +229,84 @@ export default function ReservationsCalendarModal({ visible, onClose }: { visibl
             <Text style={styles.addButtonText}>+ Ajouter une réservation</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
+
+      {/* Modal de détails de réservation */}
+      {selectedReservation && (
+        <Modal
+          visible={!!selectedReservation}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedReservation(null)}
+        >
+          <View style={styles.detailBackdrop}>
+            <View style={styles.detailModal}>
+              <View style={styles.detailHeader}>
+                <Text style={styles.detailTitle}>Détails de la réservation</Text>
+                <TouchableOpacity onPress={() => setSelectedReservation(null)}>
+                  <X size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.detailContent}>
+                <View style={styles.detailRow}>
+                  <Car size={20} color={colors.primary} />
+                  <Text style={styles.detailLabel}>Véhicule:</Text>
+                  <Text style={styles.detailValue}>
+                    {getVehicleName(selectedReservation.vehiculeId)}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <User size={20} color={colors.accent} />
+                  <Text style={styles.detailLabel}>Client:</Text>
+                  <Text style={styles.detailValue}>
+                    {getClientName(selectedReservation.clientId)}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Clock size={20} color={colors.warning} />
+                  <Text style={styles.detailLabel}>Départ:</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(selectedReservation.dateDebut).toLocaleDateString('fr-FR')} à {selectedReservation.heureDebut}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Clock size={20} color={colors.success} />
+                  <Text style={styles.detailLabel}>Retour:</Text>
+                  <Text style={styles.detailValue}>
+                    {new Date(selectedReservation.dateRetourPrevue).toLocaleDateString('fr-FR')} à {selectedReservation.heureRetourPrevue}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Statut:</Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: getReservationColor(selectedReservation.statut, colors) + '20' }
+                  ]}>
+                    <Text style={[
+                      styles.statusText,
+                      { color: getReservationColor(selectedReservation.statut, colors) }
+                    ]}>
+                      {selectedReservation.statut}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              <TouchableOpacity
+                style={styles.viewDetailsButton}
+                onPress={handleViewReservationDetails}
+              >
+                <Text style={styles.viewDetailsText}>Voir les détails complets</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -213,9 +320,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 8,
   },
   modal: {
-    width: '100%',
+    width: '95%',
+    maxWidth: 500,
+    maxHeight: '65%',
     backgroundColor: colors.surface,
-    borderRadius: 24,
+    borderRadius: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
@@ -280,77 +389,73 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   cell: {
     width: `${100/7}%`,
-    minHeight: 64,
+    minHeight: 80,
     borderWidth: 0.5,
     borderColor: colors.border,
-    padding: 2,
+    padding: 4,
     borderRadius: 8,
     marginBottom: 2,
     backgroundColor: colors.background,
+  },
+  todayCell: {
+    backgroundColor: colors.primary + '10',
+    borderColor: colors.primary,
+    borderWidth: 2,
   },
   cellDate: {
     fontSize: 13,
     color: colors.text,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 4,
     textAlign: 'right',
   },
-  resaTag: {
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    marginVertical: 2,
-    minHeight: 20,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
+  todayDate: {
+    color: colors.primary,
+    fontWeight: '800',
+  },
+  reservationsContainer: {
+    gap: 2,
+  },
+  reservationTag: {
+    borderRadius: 6,
+    padding: 4,
+    marginBottom: 2,
+    minHeight: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 2,
   },
-  resaText: {
-    fontSize: 12,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  weekRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 2,
-  },
-  resaLineRow: {
+  timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 20,
+    gap: 2,
     marginBottom: 1,
   },
-  resaCell: {
-    width: `${100/7}%`,
-    minHeight: 20,
-    borderWidth: 0.5,
-    borderColor: colors.border,
-    padding: 2,
-    borderRadius: 8,
-    marginBottom: 2,
-    backgroundColor: colors.background,
+  timeText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
-  resaBar: {
-    height: '100%',
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+  vehicleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginBottom: 1,
   },
-  resaBarText: {
-    fontSize: 12,
-    color: colors.text,
+  vehicleText: {
+    fontSize: 10,
     fontWeight: '500',
+    flex: 1,
+  },
+  clientContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  clientText: {
+    fontSize: 10,
+    fontWeight: '500',
+    flex: 1,
   },
   addButton: {
     margin: 16,
@@ -370,5 +475,74 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  detailBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(30,30,40,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  detailModal: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  detailTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  detailContent: {
+    gap: 16,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  detailLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    minWidth: 80,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: colors.text,
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  viewDetailsButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  viewDetailsText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 }); 

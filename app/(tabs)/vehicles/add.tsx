@@ -65,8 +65,8 @@ export default function AddVehicleScreen() {
   // Generate age options (18-100)
   const ageOptions = Array.from({ length: 83 }, (_, i) => i + 18);
   
-  // Generate years of experience options (1-10)
-  const experienceOptions = Array.from({ length: 10 }, (_, i) => i + 1);
+  // Generate years of experience options (0-10)
+  const experienceOptions = Array.from({ length: 11 }, (_, i) => i);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -509,11 +509,6 @@ export default function AddVehicleScreen() {
                       onPress={() => setFormData(prev => ({ ...prev, ageMinimal: age }))}
                       activeOpacity={0.8}
                     >
-                      {formData.ageMinimal === age && (
-                        <View style={styles.checkIconContainer}>
-                          <Check size={14} color={colors.primary} />
-                        </View>
-                      )}
                       <Text 
                         style={[
                           styles.glassmorphicOptionText,
@@ -549,11 +544,6 @@ export default function AddVehicleScreen() {
                       onPress={() => setFormData(prev => ({ ...prev, anneesPermis: years }))}
                       activeOpacity={0.8}
                     >
-                      {formData.anneesPermis === years && (
-                        <View style={styles.checkIconContainer}>
-                          <Check size={14} color={colors.primary} />
-                        </View>
-                      )}
                       <Text 
                         style={[
                           styles.glassmorphicOptionText,
@@ -833,7 +823,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
   },
   pickerContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
     borderRadius: 15, 
     padding: 0,
     marginBottom: 4,
@@ -841,9 +831,8 @@ const createStyles = (colors: any) => StyleSheet.create({
   glassmorphicContainer: {
     borderRadius: 0, 
     overflow: 'hidden',
-    backgroundColor: colors.surface + '80',
-    borderWidth: 1,
-    borderColor: colors.border + '30',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     paddingVertical: 10,
   },
   pickerContent: {
@@ -852,7 +841,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 12,
   },
   glassmorphicOption: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: colors.background,
     borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -860,12 +849,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 2, height: 2 },
+    shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowRadius: 0,
     elevation: 2,
-    borderWidth: 0,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
+    borderColor: colors.border + '60',
     position: 'relative',
   },
   glassmorphicOptionSelected: {
@@ -882,18 +871,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
     borderRadius: 10,
     width: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   glassmorphicOptionText: {
     fontSize: 14,
     color: colors.text,
+    fontWeight: '500',
   },
   glassmorphicOptionTextSelected: {
     color: colors.primary,

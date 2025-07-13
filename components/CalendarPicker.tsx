@@ -191,21 +191,7 @@ export default function CalendarPicker({
             <X size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity 
-            onPress={handleConfirm} 
-            style={[
-              styles.confirmButton,
-              (!tempSelectedDate || !tempSelectedTime) && styles.confirmButtonDisabled
-            ]}
-            disabled={!tempSelectedDate || !tempSelectedTime}
-          >
-            <Text style={[
-              styles.confirmText,
-              (!tempSelectedDate || !tempSelectedTime) && styles.confirmTextDisabled
-            ]}>
-              Confirmer
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -353,18 +339,21 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 20,
     paddingTop: 60,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
+    zIndex: 1000,
   },
   closeButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: colors.background,
+    zIndex: 1001,
   },
   title: {
     fontSize: 20,
@@ -372,10 +361,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
     flex: 1,
     textAlign: 'center',
+    marginHorizontal: 16,
+  },
+  headerSpacer: {
+    width: 44,
   },
   confirmButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: colors.primary + '15',
+    zIndex: 1001,
   },
   confirmButtonDisabled: {
     opacity: 0.5,
@@ -421,6 +417,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 24,
+    paddingHorizontal: 8,
   },
   navButton: {
     width: 44,
@@ -429,6 +426,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 28,
     backgroundColor: colors.background,
+    zIndex: 1002,
   },
   navButtonDisabled: {
     opacity: 0.5,

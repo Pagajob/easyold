@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Switch, Alert, ScrollView } from 'react-native';
-import { DollarSign, Plus, Trash2, CircleCheck as CheckCircle, Info, X } from 'lucide-react-native';
+import { Euro, Plus, Trash2, CircleCheck as CheckCircle, Info, X } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 
@@ -251,7 +251,6 @@ export default function ExtraFeesSection() {
         onPress={saveFees}
         disabled={!hasUnsavedChanges}
       >
-        <CheckCircle size={20} color={hasUnsavedChanges ? colors.background : colors.textSecondary} />
         <Text style={[
           styles.saveButtonText,
           !hasUnsavedChanges && styles.saveButtonTextDisabled

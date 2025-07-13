@@ -25,6 +25,7 @@ import { auth, db } from '@/config/firebase';
 import { collection, query, where, getDocs, updateDoc, Timestamp, getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 
 export interface UserProfile {
   uid: string;
@@ -47,6 +48,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithApple: () => Promise<void>;
+  signInWithBiometric: () => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -55,6 +57,10 @@ interface AuthContextType {
   updateUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateUserEmail: (currentPassword: string, newEmail: string) => Promise<void>;
   updateUserProfile?: (data: Partial<UserProfile>) => Promise<void>;
+  enableBiometricAuth: () => Promise<boolean>;
+  disableBiometricAuth: () => Promise<boolean>;
+  canUseBiometric: boolean;
+  biometricTypeName: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authInitialized, setAuthInitialized] = useState(false); 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Hook pour l'authentification biométrique
+  const biometricAuth = useBiometricAuth();
 
   // Initialize auth state from persistent storage
   useEffect(() => {
@@ -182,6 +191,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       throw new Error(getAuthErrorMessage(error.code));
     }
+  };
+
+  const signInWithBiometric = async (): Promise<void> => {
+    try {
+      if (!biometricAuth.canUseBiometric()) {
+        throw new Error('Authentification biométrique non disponible');
+      }
+
+      const userId = await biometricAuth.authenticateWithBiometric();
+      if (!userId) {
+        throw new Error('Authentification biométrique échouée');
+      }
+
+      // Récupérer les informations utilisateur depuis Firestore
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (!userDoc.exists()) {
+        throw new Error('Utilisateur non trouvé');
+      }
+
+      // Créer un token d'authentification personnalisé pour Firebase
+      // Note: Cette approche nécessite une configuration côté serveur
+      // Pour l'instant, on redirige vers la connexion normale
+      throw new Error('Authentification biométrique en cours de développement');
+    } catch (error: any) {
+      throw new Error(error.message || 'Erreur lors de l\'authentification biométrique');
+    }
+  };
+
+  const enableBiometricAuth = async (): Promise<boolean> => {
+    if (!user?.uid) {
+      throw new Error('Utilisateur non connecté');
+    }
+    return await biometricAuth.enableBiometric(user.uid);
+  };
+
+  const disableBiometricAuth = async (): Promise<boolean> => {
+    return await biometricAuth.disableBiometric();
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
@@ -375,6 +421,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       signIn,
       signInWithApple,
+      signInWithBiometric,
       signUp,
       logout,
       resetPassword,
@@ -382,7 +429,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUser, 
       updateUserPassword,
       updateUserEmail,
-      updateUserProfile
+      updateUserProfile,
+      enableBiometricAuth,
+      disableBiometricAuth,
+      canUseBiometric: biometricAuth.canUseBiometric(),
+      biometricTypeName: biometricAuth.getBiometricTypeName(),
     }}>
       {children}
     </AuthContext.Provider>

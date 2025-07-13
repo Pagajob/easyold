@@ -144,7 +144,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Animated.View 
         style={[
           styles.header,
@@ -203,12 +203,16 @@ export default function DashboardScreen() {
 
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { 
+    flex: 1, 
+    backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
+  },
   headerSafe: { backgroundColor: colors.background },
   header: { 
     paddingTop: Platform.OS === 'ios' ? 80 : 90, 

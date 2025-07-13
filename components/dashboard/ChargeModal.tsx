@@ -413,7 +413,7 @@ vehicleOptionText: {
   fontWeight: '500',
 },
 vehicleOptionTextActive: {
-  color: '#fff',
+  color: '#222',
   fontWeight: '700',
 },
   dateButton: {

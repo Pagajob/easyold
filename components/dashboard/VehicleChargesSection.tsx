@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Car, DollarSign, ChevronRight } from 'lucide-react-native';
+import { Car, Euro, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useVehicles } from '@/hooks/useVehicles';
 import { useCharges } from '@/hooks/useCharges';
@@ -113,7 +113,7 @@ export default function VehicleChargesSection() {
                   {vehicle.immatriculation}
                 </Text>
                 <View style={styles.costContainer}>
-                  <DollarSign size={16} color={vehicle.monthlyCost > 0 ? colors.error : colors.success} />
+                  <Euro size={16} color={vehicle.monthlyCost > 0 ? colors.error : colors.success} />
                   <Text style={[
                     styles.costValue,
                     { color: vehicle.monthlyCost > 0 ? colors.error : colors.success }

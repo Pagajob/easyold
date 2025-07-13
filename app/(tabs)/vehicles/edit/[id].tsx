@@ -88,7 +88,7 @@ export default function EditVehicleScreen() {
           cautionDepart: vehicle.cautionDepart || 0,
           cautionRSV: vehicle.cautionRSV || 0,
           ageMinimal: vehicle.ageMinimal || 21,
-          anneesPermis: vehicle.anneesPermis || 2,
+          anneesPermis: vehicle.anneesPermis || 0,
           assuranceMensuelle: vehicle.assuranceMensuelle || 0,
           prixAchat: vehicle.prixAchat || 0,
           apportInitial: vehicle.apportInitial || 0,
@@ -572,11 +572,6 @@ export default function EditVehicleScreen() {
                       onPress={() => setFormData(prev => ({ ...prev, ageMinimal: age }))}
                       activeOpacity={0.8}
                     >
-                      {formData.ageMinimal === age && (
-                        <View style={styles.checkIconContainer}>
-                          <Check size={14} color={colors.primary} />
-                        </View>
-                      )}
                       <Text 
                         style={[
                           styles.glassmorphicOptionText,
@@ -611,11 +606,6 @@ export default function EditVehicleScreen() {
                       onPress={() => setFormData(prev => ({ ...prev, anneesPermis: years }))}
                       activeOpacity={0.8}
                     >
-                      {formData.anneesPermis === years && (
-                        <View style={styles.checkIconContainer}>
-                          <Check size={14} color={colors.primary} />
-                        </View>
-                      )}
                       <Text 
                         style={[
                           styles.glassmorphicOptionText,
@@ -785,18 +775,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
   },
   pickerContainer: {
-    backgroundColor: colors.background,
-    borderRadius: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 15, 
     padding: 0,
     marginBottom: 4,
   },
   glassmorphicContainer: {
-    borderRadius: 10, 
+    borderRadius: 0, 
     overflow: 'hidden',
-    backgroundColor: colors.surface + '100',
-    borderWidth: 1,
-    borderColor: colors.border + '20',
-    paddingVertical: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    paddingVertical: 10,
   },
   pickerContent: {
     paddingVertical: 4,
@@ -804,20 +793,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 12,
   },
   glassmorphicOption: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 16,
+    backgroundColor: colors.background,
+    borderRadius: 28,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    minWidth: 70,
+    paddingVertical: 10,
+    minWidth: 60,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 0,
     elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: colors.border + '60',
     position: 'relative',
   },
   glassmorphicOptionSelected: {
@@ -834,18 +823,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
     borderRadius: 10,
     width: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   glassmorphicOptionText: {
     fontSize: 14,
     color: colors.text,
+    fontWeight: '500',
   },
   glassmorphicOptionTextSelected: {
     color: colors.primary,

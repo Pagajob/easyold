@@ -175,7 +175,6 @@ export default function CompanyInfoForm() {
         onPress={handleSave}
         disabled={!hasUnsavedChanges || isUploading || companySettingsLoading || !user || entrepriseLoading}
       >
-        <CheckCircle size={20} color={(hasUnsavedChanges && !isUploading && !companySettingsLoading && user && !entrepriseLoading) ? colors.background : colors.textSecondary} />
         <Text style={[
           styles.saveButtonText,
           (!hasUnsavedChanges || isUploading || companySettingsLoading || !user || entrepriseLoading) && styles.saveButtonTextDisabled
@@ -310,6 +309,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   saveButtonDisabled: {
     backgroundColor: colors.primary + '50',
+    borderRadius: 28,
   },
   saveButtonText: {
     fontSize: 16,

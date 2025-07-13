@@ -109,21 +109,17 @@ export default function DualDatePicker({
     const compareDate = new Date(date.getTime());
     compareDate.setHours(0, 0, 0, 0);
     
-    // Check if date is in reserved dates
-    const dateStringForComparison = formatDateForComparison(compareDate);
-    const isReserved = reservedDates.includes(dateStringForComparison);
-    
     // If selecting end date, disable dates before start date
     if (selectionMode === 'end' && tempStartDate) {
       const startDateObj = new Date(tempStartDate);
       startDateObj.setHours(0, 0, 0, 0);
-      return compareDate < startDateObj || isReserved;
+      return compareDate < startDateObj;
     }
     
     // For start date or if no start date is selected yet, disable dates before minDate
     const minDateCopy = new Date(minDate.getTime());
     minDateCopy.setHours(0, 0, 0, 0);
-    return compareDate < minDateCopy || isReserved;
+    return compareDate < minDateCopy;
   };
 
   const isDateSelected = (date: Date) => {
@@ -620,8 +616,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     opacity: 0.3,
   },
   dayCellReserved: {
-    backgroundColor: '#FF0000',
-    opacity: 0.7,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 3,
+    borderBottomColor: colors.primary,
   },
   dayCellToday: {
     backgroundColor: colors.accent + '20',
@@ -644,8 +641,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
   },
   dayTextReserved: {
-    color: colors.background,
-    fontWeight: '500',
+    color: colors.primary,
+    fontWeight: '600',
   },
   dayTextToday: {
     color: colors.accent,

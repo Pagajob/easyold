@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function LoginScreen() {
-  const { signIn, signInWithApple } = useAuth();
+  const { signIn, signInWithApple, signInWithBiometric, canUseBiometric, biometricTypeName } = useAuth();
   const { colors } = useTheme();
   const params = useLocalSearchParams();
   const [email, setEmail] = useState('');
@@ -115,6 +115,24 @@ export default function LoginScreen() {
     } catch (error) {
       if (error instanceof Error && error.message !== 'Sign in was canceled') {
         Alert.alert('Erreur de connexion', error.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    try {
+      setIsLoading(true);
+      await signInWithBiometric();
+      
+      // Rediriger vers le tableau de bord après une connexion réussie
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 500);
+    } catch (error) {
+      if (error instanceof Error && error.message !== 'Sign in was canceled') {
+        Alert.alert('Erreur de connexion biométrique', error.message);
       }
     } finally {
       setIsLoading(false);
@@ -241,12 +259,20 @@ export default function LoginScreen() {
           
           {isAppleAuthAvailable && (
             <TouchableOpacity 
-              style={styles.appleButton}
+              style={[
+                styles.appleButton,
+                { backgroundColor: '#000', borderColor: '#000', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', position: 'relative' }
+              ]}
               onPress={handleAppleLogin}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
-              <Apple size={20} color={colors.text} />
-              <Text style={styles.appleButtonText}>Continuer avec Apple</Text>
+              <Image
+                source={require('@/assets/images/apple-logo.png')}
+                style={{ width: 24, height: 24, position: 'absolute', left: 24 }}
+                resizeMode="contain"
+              />
+              <Text style={styles.appleButtonTextWhite}>Se connecter avec Apple</Text>
             </TouchableOpacity>
           )}
 
@@ -434,6 +460,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+  },
+  appleButtonTextWhite: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

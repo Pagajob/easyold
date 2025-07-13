@@ -377,12 +377,12 @@ export default function SettingsScreen() {
   const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <SafeAreaView style={[styles.headerSafe, { backgroundColor: colors.background }]}> 
+    <View style={styles.container}>
+      <View style={[styles.headerSafe, { backgroundColor: colors.background }]}> 
         <View style={styles.header}>
           <Text style={styles.title}>Réglages</Text>
         </View>
-      </SafeAreaView>
+      </View>
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={styles.scrollContent}
@@ -584,24 +584,23 @@ export default function SettingsScreen() {
                 style={styles.modalConfirmButton}
                 onPress={handleConfirmLogout}
               >
-                <LogOut size={16} color={colors.background} />
                 <Text style={styles.modalConfirmText}>Se déconnecter</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
     container: { 
-      flex: 1, 
+      flex: 1,
       backgroundColor: colors.background,
       position: 'relative',
-      paddingTop: 0,
+      paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
     },
     headerSafe: {
       backgroundColor: colors.background,
@@ -737,7 +736,7 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border + '80',
-      borderRadius: 10,
+      borderRadius: 28,
       paddingVertical: 14,
       alignItems: 'center',
     },

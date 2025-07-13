@@ -114,7 +114,7 @@ export default function ClientsScreen() {
   const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Animated.View 
           style={[styles.header, { height: filterSectionHeight }]}
@@ -224,7 +224,7 @@ export default function ClientsScreen() {
         onClose={() => setModalVisible(false)}
         onEdit={handleEditClient}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -232,7 +232,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 0 : 0,
+    paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
   },
   headerSafe: { backgroundColor: colors.background },
   header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
