@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getSubscriptions, buySubscription, restorePurchases } from '@/services/iapService';
-import { Check, Star, Shield, Users, FileText, Settings, ArrowRight, Calendar, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle } from 'lucide-react-native';
-import { AbonnementUtilisateur } from '@/types/abonnement';
+import { getSubscriptions } from '@/services/iapService';
+import { Check, Star, Shield, Users, FileText, ArrowRight } from 'lucide-react-native';
 
 const PLAN_FEATURES: Record<string, string[]> = {
   'Gratuit': [
@@ -48,24 +47,12 @@ const PLAN_ICONS: Record<string, any> = {
   'Premium': Shield,
 };
 
-interface PlanCardProps {
-  title: string;
-  price: number;
-  features: string[];
-  isCurrentPlan: boolean;
-  onSelect: () => void;
-  isLoading: boolean;
-  icon: any;
-}
-
 export default function SubscriptionScreen() {
   const { abonnementUtilisateur, acheterAbonnement, refreshAbonnement } = useAuth();
   const { colors } = useTheme();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState('');
-  const [restoring, setRestoring] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -76,22 +63,12 @@ export default function SubscriptionScreen() {
     })();
   }, []);
 
-  useEffect(() => {
-    // Show success message for 5 seconds after subscription change
-    if (showSuccessMessage) {
-      const timer = setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showSuccessMessage]);
-
   const handleUpgrade = async (productId: string) => {
     try {
       setProcessing(productId);
       await acheterAbonnement(productId);
       await refreshAbonnement();
-      setShowSuccessMessage(true);
+      Alert.alert('Abonnement mis à jour', 'Votre abonnement a bien été activé.');
     } catch (e) {
       Alert.alert('Erreur', 'Impossible de finaliser l’abonnement.');
     } finally {
@@ -99,415 +76,250 @@ export default function SubscriptionScreen() {
     }
   };
 
-  const handleRestorePurchases = async () => {
-    try {
-      setRestoring(true);
-      await restorePurchases();
-      await refreshAbonnement();
-      Alert.alert('Succès', 'Vos achats ont été restaurés.');
-    } catch (e) {
-      Alert.alert('Erreur', 'Impossible de restaurer les achats.');
-    } finally {
-      setRestoring(false);
-    }
-  };
-
-  const renderCurrentSubscription = () => {
-    if (!abonnementUtilisateur) return null;
-
-    const isActive = abonnementUtilisateur.statut === 'actif';
-    const statusColor = isActive ? colors.success : colors.error;
-    const statusText = isActive ? 'Actif' : 'Expiré';
-
-    return (
-      <View style={styles.currentSubscriptionContainer}>
-        <View style={styles.currentSubscriptionHeader}>
-          <Text style={styles.currentSubscriptionTitle}>Mon abonnement actuel</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-            <CheckCircle size={16} color={statusColor} />
-            <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.planInfoCard}>
-          <View style={styles.planInfoHeader}>
-            <Star size={24} color={colors.primary} />
-            <Text style={styles.planInfoName}>{abonnementUtilisateur.abonnement}</Text>
-          </View>
-          
-          <View style={styles.planInfoDetails}>
-            <View style={styles.planInfoRow}>
-              <Calendar size={16} color={colors.textSecondary} />
-              <Text style={styles.planInfoLabel}>Début:</Text>
-              <Text style={styles.planInfoValue}>
-                {abonnementUtilisateur.dateDebut ? new Date(abonnementUtilisateur.dateDebut).toLocaleDateString('fr-FR') : 'N/A'}
-              </Text>
-            </View>
-            <View style={styles.planInfoRow}>
-              <Clock size={16} color={colors.textSecondary} />
-              <Text style={styles.planInfoLabel}>Fin:</Text>
-              <Text style={styles.planInfoValue}>
-                {abonnementUtilisateur.dateFin ? new Date(abonnementUtilisateur.dateFin).toLocaleDateString('fr-FR') : 'N/A'}
-              </Text>
-            </View>
-          </View>
-          
-          <TouchableOpacity style={styles.changePlanButton}>
-            <Text style={styles.changePlanButtonText}>Changer de formule</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  const PlanCard: React.FC<PlanCardProps> = ({ title, price, features, isCurrentPlan, onSelect, isLoading, icon: Icon }) => {
-    const styles = createStyles(colors);
-    
-    return (
-      <View style={[styles.planCard, isCurrentPlan && styles.currentPlanCard]}>
-        <View style={styles.planHeader}>
-          <Icon size={20} color={colors.primary} />
-          <Text style={styles.planTitle}>{title}</Text>
-          {isCurrentPlan && (
-            <View style={styles.currentPlanBadge}>
-              <Text style={styles.currentPlanBadgeText}>ACTUEL</Text>
-            </View>
-          )}
-        </View>
-        
-        <Text style={styles.planPrice}>
-          {price === 0 ? 'Gratuit' : `${price}€/mois`}
-        </Text>
-        
-        <View style={styles.featuresList}>
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureItem}>
-              <Check size={14} color={colors.success} />
-              <Text style={styles.featureText}>{feature}</Text>
-            </View>
-          ))}
-        </View>
-        
-        <TouchableOpacity
-          style={[
-            styles.planButton,
-            isCurrentPlan && styles.currentPlanButton,
-            (isLoading || isCurrentPlan) && styles.disabledButton
-          ]}
-          onPress={onSelect}
-          disabled={isLoading || isCurrentPlan}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.planButtonText}>
-              {isCurrentPlan ? 'Plan actuel' : 'Souscrire'}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   const styles = createStyles(colors);
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Gérer mon abonnement</Text>
-      
-      {/* Success message */}
-      {showSuccessMessage && (
-        <View style={styles.successMessage}>
-          <CheckCircle size={20} color={colors.success} />
-          <Text style={styles.successMessageText}>Votre abonnement a été mis à jour avec succès !</Text>
+  const renderCurrentPlan = () => {
+    if (!abonnementUtilisateur) return null;
+    const Icon = PLAN_ICONS[abonnementUtilisateur.abonnement] || Star;
+    // Cherche le prix du plan actuel dans la liste des plans
+    const currentPlan = plans.find(p => p.title === abonnementUtilisateur.abonnement);
+    return (
+      <View style={styles.currentCard}>
+        <View style={styles.currentHeaderRow}>
+          <Icon size={36} color={colors.primary} style={{ marginRight: 14 }} />
+          <View style={{ flex: 1 }}>
+            <View style={styles.currentPlanRow}>
+              <Text style={styles.planName}>{abonnementUtilisateur.abonnement}</Text>
+              <View style={[styles.badge, { backgroundColor: abonnementUtilisateur.statut === 'actif' ? colors.success : colors.error }]}> 
+                <Text style={styles.badgeText}>{abonnementUtilisateur.statut === 'actif' ? 'Actif' : 'Expiré'}</Text>
+              </View>
+            </View>
+            <Text style={styles.planPrice}>{currentPlan?.localizedPrice || ''}</Text>
+          </View>
         </View>
-      )}
-      
-      {/* Current subscription details */}
-      {renderCurrentSubscription()}
-      
-      <Text style={styles.subtitle}>Choisissez votre formule</Text>
-      
-      {/* Subscription plans */}
-      {loading ? <ActivityIndicator color={colors.primary} /> : (
-        <View style={styles.plansGrid}>
-          {plans.map(plan => {
-            const Icon = PLAN_ICONS[plan.title] || Star;
-            const isCurrentPlan = abonnementUtilisateur?.abonnement === plan.title;
-            
-            return (
-              <PlanCard
-                key={plan.productId}
-                title={plan.title}
-                price={parseFloat(plan.price) || 0}
-                features={PLAN_FEATURES[plan.title] || []}
-                isCurrentPlan={isCurrentPlan}
-                onSelect={() => handleUpgrade(plan.productId)}
-                isLoading={processing === plan.productId}
-                icon={Icon}
-              />
-            );
-          })}
-        </View>
-      )}
-      
-      {/* Restore purchases button */}
-      <TouchableOpacity 
-        style={styles.restoreButton} 
-        onPress={handleRestorePurchases}
-        disabled={restoring}
-      > 
-        <Text style={styles.restoreText}>
-          {restoring ? 'Restauration en cours...' : 'Restaurer mes achats'}
-        </Text>
-        <ArrowRight size={18} color={colors.primary} />
-      </TouchableOpacity>
-      
-      {/* Legal information */}
-      <View style={styles.legalInfo}>
-        <Text style={styles.legalText}>
-          Les abonnements sont facturés via votre compte App Store et se renouvellent automatiquement 
-          sauf si vous les annulez au moins 24h avant la fin de la période en cours.
-        </Text>
-        <Text style={styles.legalText}>
-          Vous pouvez gérer vos abonnements dans les paramètres de votre compte App Store.
-        </Text>
+        <Text style={styles.renewal}>Renouvellement : {new Date(abonnementUtilisateur.dateFin).toLocaleDateString('fr-FR')}</Text>
       </View>
-    </ScrollView>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.pageTitle}>Gérer mon abonnement</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Abonnement en cours</Text>
+          {renderCurrentPlan()}
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Changer de formule</Text>
+          {loading ? <ActivityIndicator color={colors.primary} /> : (
+            plans.map(plan => {
+              const Icon = PLAN_ICONS[plan.title] || Star;
+              const isCurrent = abonnementUtilisateur?.abonnement === plan.title;
+              return (
+                <View key={plan.productId} style={[styles.planCard, isCurrent && styles.planCardCurrent]}>
+                  <View style={styles.planHeader}>
+                    <Icon size={28} color={colors.primary} style={{ marginRight: 10 }} />
+                    <Text style={styles.planTitle}>{plan.title}</Text>
+                    {isCurrent && (
+                      <View style={[styles.badge, { backgroundColor: colors.primary }]}> 
+                        <Text style={styles.badgeText}>Plan actuel</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.planPrice}>{plan.localizedPrice}</Text>
+                  <View style={styles.featuresList}>
+                    {PLAN_FEATURES[plan.title]?.map((f, i) => (
+                      <View key={i} style={styles.featureRow}>
+                        <Check size={16} color={colors.success} style={{ marginRight: 6 }} />
+                        <Text style={styles.featureText}>{f}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.chooseButton, isCurrent && styles.chooseButtonSelected]}
+                    onPress={() => handleUpgrade(plan.productId)}
+                    disabled={processing === plan.productId || isCurrent}
+                    activeOpacity={0.8}
+                  >
+                    {processing === plan.productId ? (
+                      <ActivityIndicator color={colors.background} />
+                    ) : (
+                      <Text style={styles.chooseButtonText}>
+                        {isCurrent ? 'Plan actuel' : 'Choisir ce plan'}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          )}
+        </View>
+        <View style={{ alignItems: 'center', marginTop: 8 }}>
+          <TouchableOpacity style={styles.restoreButton} onPress={() => Alert.alert('Restaurer', 'Fonctionnalité à venir')}> 
+            <Text style={styles.restoreText}>Restaurer un achat</Text>
+            <ArrowRight size={18} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={{ height: 48 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: 20,
     alignItems: 'stretch',
-    paddingBottom: 40,
   },
-  title: {
-    fontSize: 28,
+  pageTitle: {
+    fontSize: 32,
     fontWeight: '800',
     color: colors.text,
-    marginBottom: 18,
+    marginBottom: 22,
+    marginTop: 32,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
-  successMessage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.success + '15',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    gap: 12,
+  section: {
+    marginBottom: 36,
   },
-  successMessageText: {
-    fontSize: 14,
-    color: colors.success,
-    fontWeight: '600',
-    flex: 1,
-  },
-  currentSubscriptionContainer: {
-    marginBottom: 30,
-  },
-  currentSubscriptionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  currentSubscriptionTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    marginLeft: 4,
+    letterSpacing: 0.1,
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  planInfoCard: {
+  currentCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 28,
+    padding: 26,
+    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  planInfoHeader: {
+  currentHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 8,
   },
-  planInfoName: {
-    fontSize: 20,
+  currentPlanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  planName: {
+    fontSize: 22,
     fontWeight: '700',
     color: colors.primary,
-  },
-  planInfoDetails: {
-    marginBottom: 20,
-  },
-  planInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 10,
-  },
-  planInfoLabel: {
-    fontSize: 14,
-    color: colors.text,
-    width: 120,
-  },
-  planInfoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    flex: 1,
-    textAlign: 'right',
-  },
-  changePlanButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  changePlanButtonText: {
-    color: colors.background,
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  plansGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  planCard: {
-    width: '48%',
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  currentPlanCard: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-    backgroundColor: colors.primary + '05',
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  planTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.primary,
-    flex: 1,
-  },
-  currentPlanBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  currentPlanBadgeText: {
-    color: colors.background,
-    fontSize: 10,
-    fontWeight: '700',
+    marginRight: 10,
   },
   planPrice: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 8,
-    marginTop: 4,
+    marginBottom: 2,
   },
-  featuresList: {
-    marginBottom: 16,
-    flex: 1,
+  renewal: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    marginTop: 6,
+    marginLeft: 2,
   },
-  featureItem: {
+  badge: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    marginLeft: 6,
+    alignSelf: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  planCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  planCardCurrent: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  planHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: 6,
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginRight: 8,
+  },
+  featuresList: {
+    marginVertical: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
   },
   featureText: {
-    fontSize: 12,
-    color: colors.text,
-    flex: 1,
+    fontSize: 15,
+    color: colors.textSecondary,
   },
-  planButton: {
+  chooseButton: {
+    marginTop: 10,
     backgroundColor: colors.primary,
-    borderRadius: 28,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  currentPlanButton: {
-    backgroundColor: colors.success,
+  chooseButtonSelected: {
+    backgroundColor: colors.disabled,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  planButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  chooseButtonText: {
     color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
   restoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    marginTop: 8,
+    marginBottom: 8,
     alignSelf: 'center',
-    marginTop: 24,
-    padding: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
   },
   restoreText: {
-    color: colors.primary,
-    fontWeight: '600',
-    fontSize: 15,
-    marginRight: 6,
-  },
-  legalInfo: {
-    marginTop: 30,
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  legalText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 8,
-    lineHeight: 18,
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+    marginRight: 8,
   },
 }); 

@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Palette, Moon, Sun, Download, FileText, TrendingUp, Users, Plus, UserPlus, User, LogOut, ChevronRight, ChartBar as BarChart, Check } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -379,12 +380,20 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <TouchableOpacity
-          style={{ backgroundColor: colors.primary + '10', borderRadius: 20, padding: 18, marginBottom: 24, alignItems: 'center' }}
-          onPress={() => router.push('/(tabs)/settings/subscription')}
+        <LinearGradient
+          colors={['#8B5CF6', '#EC4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ borderRadius: 28, paddingVertical: 15, paddingHorizontal: 20, marginTop: 15, marginBottom: 20, alignItems: 'center', alignSelf: 'center', width: '70%' }}
         >
-          <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 18 }}>Gérer mon abonnement</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={{ width: '100%', alignItems: 'center' }}
+            activeOpacity={0.85}
+            onPress={() => router.push('/(tabs)/settings/subscription')}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16, letterSpacing: 0.2 }}>Gérer mon abonnement</Text>
+          </TouchableOpacity>
+        </LinearGradient>
         <View style={styles.formContainer}>
           <CompanyInfoForm />
         </View>
