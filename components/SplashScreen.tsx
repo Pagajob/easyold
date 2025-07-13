@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 60,
     height: 60,
-    borderRadius: 8,
+    borderRadius: 0,
   },
   appName: {
     fontSize: 32,
