@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { useSecureStorage } from '@/hooks/useSecureStorage';
 
 export default function RegisterScreen() {
   const { signUp, signInWithApple } = useAuth();
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const { saveSecurely } = useSecureStorage();
 
   // Check if Apple authentication is available
   useEffect(() => {
@@ -119,6 +121,9 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       await signUp(email, password, name || undefined);
+      // Enregistrement dans le trousseau iCloud/Keychain
+      await saveSecurely('user_email', email);
+      await saveSecurely('user_password', password);
       Alert.alert(
         'Compte créé !',
         'Un email de vérification a été envoyé à votre adresse. Veuillez vérifier votre boîte mail pour activer votre compte. Vous allez être redirigé vers la page de connexion.',

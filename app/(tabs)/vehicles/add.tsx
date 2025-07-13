@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, Platform, Switch } from 'react-native';
 import { ArrowLeft, Camera, Save, DollarSign, Check } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -16,8 +16,9 @@ const STATUT_OPTIONS = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'];
 export default function AddVehicleScreen() {
   const { colors } = useTheme();
   const { addVehicle } = useData();
-  const { user } = useAuth();
+  const { user, abonnementUtilisateur } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showRestrictionModal, setShowRestrictionModal] = useState(false);
   
   const [formData, setFormData] = useState({
     marque: '',
@@ -314,6 +315,36 @@ export default function AddVehicleScreen() {
   };
 
   const styles = createStyles(colors);
+
+  // Contrôle de la limite d'abonnement
+  const { vehicles } = useData();
+  const vehiculesMax = abonnementUtilisateur?.vehiculesMax ?? 1;
+  useEffect(() => {
+    if (vehicles.length >= vehiculesMax) {
+      setShowRestrictionModal(true);
+    }
+  }, [vehicles, vehiculesMax]);
+
+  if (showRestrictionModal) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 32, alignItems: 'center', margin: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 16, textAlign: 'center' }}>
+            Fonctionnalité réservée aux abonnés
+          </Text>
+          <Text style={{ fontSize: 16, color: colors.textSecondary, marginBottom: 24, textAlign: 'center' }}>
+            Vous avez atteint la limite de véhicules de votre abonnement. Abonnez-vous via l’App Store pour continuer.
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: colors.primary, borderRadius: 28, paddingVertical: 14, paddingHorizontal: 32 }}
+            onPress={() => router.push('/(tabs)/settings/subscription')}
+          >
+            <Text style={{ color: colors.background, fontWeight: '700', fontSize: 16 }}>Voir les abonnements</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}> 

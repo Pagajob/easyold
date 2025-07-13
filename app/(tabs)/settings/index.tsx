@@ -377,16 +377,14 @@ export default function SettingsScreen() {
   const styles = createStyles(colors);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.headerSafe, { backgroundColor: colors.background }]}> 
-        <View style={styles.header}>
-          <Text style={styles.title}>Réglages</Text>
-        </View>
-      </View>
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        contentContainerStyle={styles.scrollContent}
-      >
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}> 
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          style={{ backgroundColor: colors.primary + '10', borderRadius: 20, padding: 18, marginBottom: 24, alignItems: 'center' }}
+          onPress={() => router.push('/(tabs)/settings/subscription')}
+        >
+          <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 18 }}>Gérer mon abonnement</Text>
+        </TouchableOpacity>
         <View style={styles.formContainer}>
           <CompanyInfoForm />
         </View>
@@ -590,7 +588,7 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

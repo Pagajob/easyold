@@ -12,9 +12,10 @@ interface ChargeModalProps {
   visible: boolean;
   charge: Charge | null;
   onClose: () => void;
+  defaultVehicleId?: string | null;
 }
 
-export default function ChargeModal({ visible, charge, onClose }: ChargeModalProps) {
+export default function ChargeModal({ visible, charge, onClose, defaultVehicleId }: ChargeModalProps) {
   const { colors } = useTheme();
   const { addCharge, updateCharge } = useCharges();
   const { vehicles } = useVehicles();
@@ -49,11 +50,11 @@ export default function ChargeModal({ visible, charge, onClose }: ChargeModalPro
         type: 'Fixe',
         dateDebut: '',
         frequence: 'Mensuelle',
-        vehiculeId: null,
+        vehiculeId: defaultVehicleId || null,
         estPaiementProprietaire: false,
       });
     }
-  }, [charge, visible]);
+  }, [charge, visible, defaultVehicleId]);
 
   const handleSubmit = async () => {
     if (!formData.nom || formData.montantMensuel <= 0) {
@@ -354,7 +355,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
+    borderRadius: 28,
     padding: 12,
     fontSize: 16,
     color: colors.text,

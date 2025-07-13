@@ -929,7 +929,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   ownerPaymentButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 28,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1100,7 +1100,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   viewContractButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 28,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1114,7 +1114,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   generateContractButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 28,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1137,9 +1137,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 28,
     gap: 8,
   },
   primaryActionText: {

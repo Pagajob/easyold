@@ -29,7 +29,10 @@ export default function VehicleChargesModal({
   if (!vehicleId) return null;
   
   const vehicle = getVehicleById(vehicleId);
-  if (!vehicle) return null;
+  if (!vehicle) {
+    console.log('Véhicule non trouvé pour vehicleId:', vehicleId);
+    return null;
+  }
 
   // Get vehicle-specific charges
   const vehicleCharges = charges.filter(c => c.vehiculeId === vehicleId);
@@ -295,6 +298,7 @@ export default function VehicleChargesModal({
         visible={chargeModalVisible}
         charge={editingCharge}
         onClose={closeChargeModal}
+        defaultVehicleId={vehicleId}
       />
     </>
   );

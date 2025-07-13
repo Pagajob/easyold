@@ -351,7 +351,7 @@ export default function EditVehicleScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ℹ️ Informations générales</Text>
+          <Text style={styles.sectionTitle}>Informations générales</Text>
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Marque *</Text>
@@ -756,14 +756,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   optionButton: {
     backgroundColor: 'transparent',
-    borderRadius: 15, 
+    borderRadius: 28, 
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 0,
   },
   optionButtonActive: {
     backgroundColor: colors.primary + '15',
-    borderLeftWidth: 3,
+    borderLeftWidth: 2,
     borderLeftColor: colors.primary, 
   },
   optionText: {

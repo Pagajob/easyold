@@ -235,7 +235,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
   },
   headerSafe: { backgroundColor: colors.background },
-  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
+  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 12 },
   headerContent: {
     flex: 1,
   },
@@ -246,11 +246,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     marginBottom: 16,
   },
   collapsedSearchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 12,
     zIndex: 10,
@@ -280,7 +280,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   searchBar: {
     flexDirection: 'row',
@@ -333,7 +333,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.background,
   },
   clientsList: {
-    padding: 20,
+    padding: 12,
     gap: 16,
   },
   scrollContent: { paddingBottom: 100, paddingTop: 8 },

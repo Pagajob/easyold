@@ -385,7 +385,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
   },
   headerSafe: { backgroundColor: colors.background },
-  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 24 },
+  header: { paddingTop: Platform.OS === 'ios' ? 8 : 12, paddingBottom: 12, paddingHorizontal: 12 },
   title: { fontSize: 28, fontWeight: '800', color: colors.text, marginTop: 0 },
   scrollContent: { paddingBottom: 100, paddingTop: 8 },
   headerContent: {
@@ -398,7 +398,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     marginBottom: 16,
   },
   headerActions: {
@@ -426,7 +426,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     marginBottom: 16,
     gap: 12,
   },
@@ -449,11 +449,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     textAlign: 'center',
   },
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     marginBottom: 16,
   },
   collapsedSearchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 12,
     zIndex: 10,
@@ -475,10 +475,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
   },
   filtersContainer: {
-    paddingLeft: 20,
+    paddingLeft: 12,
   },
   filtersContent: {
-    paddingRight: 20,
+    paddingRight: 12,
     gap: 8,
   },
   filterButton: {
@@ -555,7 +555,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.background,
   },
   vehiclesList: {
-    padding: 20,
+    padding: 12,
     gap: 16,
   },
 });

@@ -26,6 +26,8 @@ import { collection, query, where, getDocs, updateDoc, Timestamp, getFirestore }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
+import { AbonnementUtilisateur } from '@/types/abonnement';
+import * as IAP from '@/services/iapService';
 
 export interface UserProfile {
   uid: string;
@@ -61,6 +63,10 @@ interface AuthContextType {
   disableBiometricAuth: () => Promise<boolean>;
   canUseBiometric: boolean;
   biometricTypeName: string;
+  abonnementUtilisateur: AbonnementUtilisateur | null;
+  refreshAbonnement: () => Promise<void>;
+  acheterAbonnement: (productId: string) => Promise<void>;
+  restaurerAbonnement: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -70,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authInitialized, setAuthInitialized] = useState(false); 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [abonnementUtilisateur, setAbonnementUtilisateur] = useState<AbonnementUtilisateur | null>(null);
+
   // Hook pour l'authentification biométrique
   const biometricAuth = useBiometricAuth();
 
@@ -413,28 +420,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return user?.emailVerified || false;
   };
 
+  // Récupérer l'abonnement utilisateur depuis Firestore
+  const refreshAbonnement = async () => {
+    if (!user) return;
+    const q = query(collection(db, 'AbonnementUtilisateur'), where('user', '==', user.uid), where('statut', '==', 'actif'));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      setAbonnementUtilisateur(snap.docs[0].data() as AbonnementUtilisateur);
+    } else {
+      setAbonnementUtilisateur(null);
+    }
+  };
+
+  // Acheter un abonnement via l'App Store
+  const acheterAbonnement = async (productId: string) => {
+    const purchase = await IAP.buySubscription(productId);
+    // Récupérer le reçu de la transaction
+    const receipt = purchase?.transactionReceipt;
+    if (receipt && user) {
+      await IAP.validateAppleReceipt(receipt, user.uid);
+    }
+    await refreshAbonnement();
+  };
+
+  // Restaurer les achats
+  const restaurerAbonnement = async () => {
+    const purchases = await IAP.restorePurchases();
+    // Prendre le reçu du dernier achat restauré
+    const receipt = purchases?.[0]?.transactionReceipt;
+    if (receipt && user) {
+      await IAP.validateAppleReceipt(receipt, user.uid);
+    }
+    await refreshAbonnement();
+  };
+
+  // Rafraîchir l'abonnement à chaque connexion
+  useEffect(() => {
+    if (user) refreshAbonnement();
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{
-      authInitialized,
-      user, 
-      userProfile,
-      loading,
-      signIn,
-      signInWithApple,
-      signInWithBiometric,
-      signUp,
-      logout,
-      resetPassword,
-      resendVerificationEmail, 
-      refreshUser, 
-      updateUserPassword,
-      updateUserEmail,
-      updateUserProfile,
-      enableBiometricAuth,
-      disableBiometricAuth,
-      canUseBiometric: biometricAuth.canUseBiometric(),
-      biometricTypeName: biometricAuth.getBiometricTypeName(),
-    }}>
+    <AuthContext.Provider
+      value={{
+        authInitialized,
+        user, 
+        userProfile,
+        loading,
+        signIn,
+        signInWithApple,
+        signInWithBiometric,
+        signUp,
+        logout,
+        resetPassword,
+        resendVerificationEmail, 
+        refreshUser, 
+        updateUserPassword,
+        updateUserEmail,
+        updateUserProfile,
+        enableBiometricAuth,
+        disableBiometricAuth,
+        canUseBiometric: biometricAuth.canUseBiometric(),
+        biometricTypeName: biometricAuth.getBiometricTypeName(),
+        abonnementUtilisateur,
+        refreshAbonnement,
+        acheterAbonnement,
+        restaurerAbonnement,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
