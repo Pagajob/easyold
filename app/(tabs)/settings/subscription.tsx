@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Image, Platform } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getSubscriptions } from '@/services/iapService';
-import { Check, Star, Shield, Users, FileText, Settings, ArrowRight } from 'lucide-react-native';
+import { getSubscriptions, buySubscription, restorePurchases } from '@/services/iapService';
+import { Check, Star, Shield, Users, FileText, Settings, ArrowRight, Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react-native';
+import { AbonnementUtilisateur } from '@/types/abonnement';
 
 const PLAN_FEATURES: Record<string, string[]> = {
   'Gratuit': [
@@ -47,12 +48,24 @@ const PLAN_ICONS: Record<string, any> = {
   'Premium': Shield,
 };
 
+interface PlanCardProps {
+  title: string;
+  price: number;
+  features: string[];
+  isCurrentPlan: boolean;
+  onSelect: () => void;
+  isLoading: boolean;
+  icon: any;
+}
+
 export default function SubscriptionScreen() {
   const { abonnementUtilisateur, acheterAbonnement, refreshAbonnement } = useAuth();
   const { colors } = useTheme();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState('');
+  const [restoring, setRestoring] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -63,91 +76,87 @@ export default function SubscriptionScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    // Show success message for 5 seconds after subscription change
+    if (showSuccessMessage) {
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessMessage]);
+
   const handleUpgrade = async (productId: string) => {
     try {
       setProcessing(productId);
       await acheterAbonnement(productId);
       await refreshAbonnement();
-      Alert.alert('Abonnement mis à jour', 'Votre abonnement a bien été activé.');
+      setShowSuccessMessage(true);
     } catch (e) {
       Alert.alert('Erreur', 'Impossible de finaliser l’abonnement.');
     } finally {
       setProcessing('');
     }
-  };
-
-  const styles = createStyles(colors);
-
-  const renderCurrentPlan = () => {
-    if (!abonnementUtilisateur) return null;
-    const Icon = PLAN_ICONS[abonnementUtilisateur.abonnement] || Star;
-    return (
-      <View style={styles.currentCard}>
-        <View style={styles.currentHeader}>
-          <Icon size={32} color={colors.primary} style={{ marginRight: 12 }} />
-          <View>
-            <Text style={styles.currentTitle}>Votre abonnement actuel</Text>
-            <View style={[styles.badge, { backgroundColor: abonnementUtilisateur.statut === 'actif' ? colors.success : colors.error }]}> 
-              <Text style={styles.badgeText}>{abonnementUtilisateur.statut === 'actif' ? 'Actif' : 'Expiré'}</Text>
-            </View>
-          </View>
-        </View>
-        <Text style={styles.planName}>{abonnementUtilisateur.abonnement}</Text>
-        <Text style={styles.renewal}>Renouvellement : {new Date(abonnementUtilisateur.dateFin).toLocaleDateString('fr-FR')}</Text>
-      </View>
-    );
-  };
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Gérer mon abonnement</Text>
-      {renderCurrentPlan()}
-      <Text style={styles.subtitle}>Choisissez votre formule</Text>
-      {loading ? <ActivityIndicator color={colors.primary} /> : (
-        plans.map(plan => {
-          const Icon = PLAN_ICONS[plan.title] || Star;
-          return (
-            <View key={plan.productId} style={styles.planCard}>
-              <View style={styles.planHeader}>
-                <Icon size={28} color={colors.primary} style={{ marginRight: 10 }} />
-                <Text style={styles.planTitle}>{plan.title}</Text>
-                {abonnementUtilisateur?.abonnement === plan.title && (
-                  <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.badgeText}>Sélectionné</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.planPrice}>{plan.localizedPrice}</Text>
-              <View style={styles.featuresList}>
-                {PLAN_FEATURES[plan.title]?.map((f, i) => (
-                  <View key={i} style={styles.featureRow}>
-                    <Check size={16} color={colors.success} style={{ marginRight: 6 }} />
-                    <Text style={styles.featureText}>{f}</Text>
-                  </View>
-                ))}
-              </View>
-              <TouchableOpacity
-                style={[styles.chooseButton, abonnementUtilisateur?.abonnement === plan.title && styles.chooseButtonSelected]}
-                onPress={() => handleUpgrade(plan.productId)}
-                disabled={processing === plan.productId || abonnementUtilisateur?.abonnement === plan.title}
-                activeOpacity={0.8}
-              >
-                {processing === plan.productId ? (
-                  <ActivityIndicator color={colors.background} />
-                ) : (
-                  <Text style={styles.chooseButtonText}>
-                    {abonnementUtilisateur?.abonnement === plan.title ? 'Plan actuel' : 'Choisir ce plan'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          );
-        })
+      
+      {/* Success message */}
+      {showSuccessMessage && (
+        <View style={styles.successMessage}>
+          <CheckCircle size={20} color={colors.success} />
+          <Text style={styles.successMessageText}>Votre abonnement a été mis à jour avec succès !</Text>
+        </View>
       )}
-      <TouchableOpacity style={styles.restoreButton} onPress={() => Alert.alert('Restaurer', 'Fonctionnalité à venir')}> 
-        <Text style={styles.restoreText}>Restaurer un achat</Text>
+      
+      {/* Current subscription details */}
+      {renderCurrentSubscription()}
+      
+      <Text style={styles.subtitle}>Choisissez votre formule</Text>
+      
+      {/* Subscription plans */}
+      {loading ? <ActivityIndicator color={colors.primary} /> : (
+        <View style={styles.plansGrid}>
+          {plans.map(plan => {
+            const Icon = PLAN_ICONS[plan.title] || Star;
+            const isCurrentPlan = abonnementUtilisateur?.abonnement === plan.title;
+            
+            return (
+              <PlanCard
+                key={plan.productId}
+                title={plan.title}
+                price={parseFloat(plan.price) || 0}
+                features={PLAN_FEATURES[plan.title] || []}
+                isCurrentPlan={isCurrentPlan}
+                onSelect={() => handleUpgrade(plan.productId)}
+                isLoading={processing === plan.productId}
+                icon={Icon}
+              />
+            );
+          })}
+        </View>
+      )}
+      
+      {/* Restore purchases button */}
+      <TouchableOpacity 
+        style={styles.restoreButton} 
+        onPress={handleRestorePurchases}
+        disabled={restoring}
+      > 
+        <Text style={styles.restoreText}>
+          {restoring ? 'Restauration en cours...' : 'Restaurer mes achats'}
+        </Text>
         <ArrowRight size={18} color={colors.primary} />
       </TouchableOpacity>
+      
+      {/* Legal information */}
+      <View style={styles.legalInfo}>
+        <Text style={styles.legalText}>
+          Les abonnements sont facturés via votre compte App Store et se renouvellent automatiquement 
+          sauf si vous les annulez au moins 24h avant la fin de la période en cours.
+        </Text>
+        <Text style={styles.legalText}>
+          Vous pouvez gérer vos abonnements dans les paramètres de votre compte App Store.
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -158,8 +167,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: 24,
+    padding: 20,
     alignItems: 'stretch',
+    paddingBottom: 40,
   },
   title: {
     fontSize: 28,
@@ -168,53 +178,99 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 18,
     textAlign: 'center',
   },
-  currentCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
-    padding: 22,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  currentHeader: {
+  successMessage: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  currentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  badge: {
-    alignSelf: 'flex-start',
+    backgroundColor: colors.success + '15',
     borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginTop: 4,
+    padding: 16,
+    marginBottom: 20,
+    gap: 12,
   },
-  badgeText: {
-    color: colors.background,
+  successMessageText: {
+    fontSize: 14,
+    color: colors.success,
+    fontWeight: '600',
+    flex: 1,
+  },
+  currentSubscriptionContainer: {
+    marginBottom: 30,
+  },
+  currentSubscriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  currentSubscriptionTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    fontSize: 13,
+    color: colors.text,
   },
-  planName: {
-    fontSize: 22,
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  planInfoCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  planInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  planInfoName: {
+    fontSize: 20,
     fontWeight: '700',
     color: colors.primary,
-    marginBottom: 4,
-    marginTop: 8,
-    textAlign: 'center',
   },
-  renewal: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 2,
+  planInfoDetails: {
+    marginBottom: 20,
+  },
+  planInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  planInfoLabel: {
+    fontSize: 14,
+    color: colors.text,
+    width: 120,
+  },
+  planInfoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+    textAlign: 'right',
+  },
+  changePlanButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  changePlanButtonText: {
+    color: colors.background,
+    fontWeight: '700',
+    fontSize: 16,
   },
   subtitle: {
     fontSize: 20,
@@ -223,68 +279,99 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  plansGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
   planCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    width: '48%',
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  currentPlanCard: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: colors.primary + '05',
   },
   planHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
+    gap: 8,
   },
   planTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.primary,
-    marginRight: 8,
+    flex: 1,
+  },
+  currentPlanBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  currentPlanBadgeText: {
+    color: colors.background,
+    fontSize: 10,
+    fontWeight: '700',
   },
   planPrice: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 8,
-    textAlign: 'center',
+    marginTop: 4,
   },
   featuresList: {
-    marginBottom: 14,
-    marginTop: 2,
+    marginBottom: 16,
+    flex: 1,
   },
-  featureRow: {
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
+    gap: 8,
   },
   featureText: {
-    fontSize: 15,
+    fontSize: 12,
     color: colors.text,
+    flex: 1,
   },
-  chooseButton: {
+  planButton: {
     backgroundColor: colors.primary,
-    borderRadius: 28,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
   },
-  chooseButtonSelected: {
+  currentPlanButton: {
     backgroundColor: colors.success,
   },
-  chooseButtonText: {
-    color: colors.background,
-    fontWeight: '700',
-    fontSize: 16,
+  disabledButton: {
+    opacity: 0.6,
+  },
+  planButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
   restoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: 18,
+    marginTop: 24,
     padding: 8,
   },
   restoreText: {
@@ -292,5 +379,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     marginRight: 6,
+  },
+  legalInfo: {
+    marginTop: 30,
+    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  legalText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    lineHeight: 18,
   },
 }); 
