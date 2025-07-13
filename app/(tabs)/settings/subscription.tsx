@@ -467,7 +467,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   planButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 28,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
