@@ -629,7 +629,7 @@ const createStyles = (colors: any) =>
     sectionCard: {
       marginHorizontal: 16,
       backgroundColor: colors.background,
-      borderRadius: 28,
+      borderRadius: 12,
       padding: 20,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
