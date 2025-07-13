@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,11 +10,12 @@ import Animated, {
   withDelay,
   runOnJS,
   interpolate,
-  Extrapolate,
+  Extrapolate, 
   Easing,
 } from 'react-native-reanimated';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Car, Calendar, Users, Settings } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,7 +26,7 @@ interface SplashScreenProps {
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colors } = useTheme();
   
-  // Shared values for animations
+  // Valeurs partagées pour les animations
   const logoScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
@@ -35,6 +36,8 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const cursorOpacity = useSharedValue(0);
   const backgroundOpacity = useSharedValue(0);
   const skipButtonOpacity = useSharedValue(0);
+  const iconsOpacity = useSharedValue(0);
+  const iconsScale = useSharedValue(0);
   
   const canSkip = useRef(false);
   const animationFinished = useRef(false);
@@ -42,13 +45,14 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const slogan = "Votre gestion de flotte simplifiée";
   const [displayedText, setDisplayedText] = React.useState('');
   const [showCursor, setShowCursor] = React.useState(false);
+  const [showIcons, setShowIcons] = React.useState(false);
 
-  // Background animation
+  // Animation du fond
   const backgroundStyle = useAnimatedStyle(() => ({
     opacity: backgroundOpacity.value,
   }));
 
-  // Logo animation
+  // Animation du logo
   const logoStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: logoScale.value },
@@ -57,7 +61,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     opacity: logoOpacity.value,
   }));
 
-  // Glow animation
+  // Animation du halo
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
     transform: [
@@ -65,26 +69,34 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     ],
   }));
 
-  // Text animation
+  // Animation du texte
   const textStyle = useAnimatedStyle(() => ({
     opacity: textOpacity.value,
   }));
 
-  // Cursor animation
+  // Animation du curseur
   const cursorStyle = useAnimatedStyle(() => ({
     opacity: cursorOpacity.value,
   }));
 
-  // Skip button animation
+  // Animation du bouton de saut
   const skipButtonStyle = useAnimatedStyle(() => ({
     opacity: skipButtonOpacity.value,
+  }));
+
+  // Animation des icônes
+  const iconsStyle = useAnimatedStyle(() => ({
+    opacity: iconsOpacity.value,
+    transform: [
+      { scale: iconsScale.value },
+    ],
   }));
 
   const startAnimation = () => {
     // 1. Background fade in (0-800ms)
     backgroundOpacity.value = withTiming(1, { duration: 800 });
 
-    // 2. Logo animation (400-1200ms)
+    // 2. Animation du logo (400-1200ms)
     setTimeout(() => {
       logoOpacity.value = withTiming(1, { duration: 400 });
       logoScale.value = withSpring(1, {
@@ -95,7 +107,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       });
     }, 400);
 
-    // 3. Glow animation (800-2000ms)
+    // 3. Animation du halo (800-2000ms)
     setTimeout(() => {
       glowOpacity.value = withRepeat(
         withSequence(
@@ -107,12 +119,12 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       );
     }, 800);
 
-    // 4. Text animation (1400-2400ms)
+    // 4. Animation du texte (1400-2400ms)
     setTimeout(() => {
       textOpacity.value = withTiming(1, { duration: 400 });
     }, 1400);
 
-    // 5. Typewriter effect (1400-3500ms)
+    // 5. Effet machine à écrire (1400-3500ms)
     setTimeout(() => {
       let currentIndex = 0;
       const typewriterInterval = setInterval(() => {
@@ -135,7 +147,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       }, 30); // vitesse accélérée
     }, 1400);
 
-    // 6.5. Rotation du logo (3000ms)
+    // 6. Rotation du logo (3000ms)
     setTimeout(() => {
       logoRotation.value = withTiming(360, {
         duration: 800,
@@ -143,13 +155,23 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
       });
     }, 3000);
 
-    // 6. Skip button available (1500ms+)
+    // 7. Animation des icônes (2500ms)
+    setTimeout(() => {
+      setShowIcons(true);
+      iconsOpacity.value = withTiming(1, { duration: 800 });
+      iconsScale.value = withSpring(1, {
+        damping: 8,
+        stiffness: 100,
+      });
+    }, 2500);
+
+    // 8. Bouton de saut disponible (1500ms+)
     setTimeout(() => {
       canSkip.current = true;
       skipButtonOpacity.value = withTiming(1, { duration: 300 });
     }, 1500);
 
-    // 7. Auto finish (3500ms)
+    // 9. Fin automatique (4200ms)
     setTimeout(() => {
       if (!animationFinished.current) {
         // Délai supplémentaire pour permettre à la rotation de se terminer
@@ -157,7 +179,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           finishAnimation();
         }, 500);
       }
-    }, 3800);
+    }, 4200);
   };
 
   const finishAnimation = () => {
@@ -168,6 +190,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
     logoOpacity.value = withTiming(0, { duration: 300 });
     textOpacity.value = withTiming(0, { duration: 300 });
     glowOpacity.value = withTiming(0, { duration: 200 });
+    iconsOpacity.value = withTiming(0, { duration: 200 });
     logoRotation.value = withTiming(720, { duration: 500 });
     cursorOpacity.value = withTiming(0, { duration: 200 });
     skipButtonOpacity.value = withTiming(0, { duration: 200 });
@@ -191,14 +214,18 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <View style={styles.container}>
       {/* Background gradient */}
-      <Animated.View style={[styles.background, backgroundStyle]}>
-        <LinearGradient
-          colors={['#8B5CF6', '#EC4899']}
-          style={styles.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-      </Animated.View>
+      {Platform.OS === 'web' ? (
+        <Animated.View style={[styles.background, backgroundStyle]}>
+          <LinearGradient
+            colors={[colors.primary, '#EC4899']}
+            style={styles.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </Animated.View>
+      ) : (
+        <Animated.View style={[styles.background, backgroundStyle, {backgroundColor: colors.primary}]} />
+      )}
 
       {/* Logo with glow effect */}
       <View style={styles.logoContainer}>
@@ -226,6 +253,28 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
           </Animated.Text>
         </Text>
       </Animated.View>
+
+      {/* Animated icons */}
+      {showIcons && (
+        <Animated.View style={[styles.iconsContainer, iconsStyle]}>
+          <View style={styles.iconRow}>
+            <View style={[styles.iconCircle, {backgroundColor: 'rgba(255, 255, 255, 0.2)'}]}>
+              <Car size={24} color="white" />
+            </View>
+            <View style={[styles.iconCircle, {backgroundColor: 'rgba(255, 255, 255, 0.2)'}]}>
+              <Users size={24} color="white" />
+            </View>
+          </View>
+          <View style={styles.iconRow}>
+            <View style={[styles.iconCircle, {backgroundColor: 'rgba(255, 255, 255, 0.2)'}]}>
+              <Calendar size={24} color="white" />
+            </View>
+            <View style={[styles.iconCircle, {backgroundColor: 'rgba(255, 255, 255, 0.2)'}]}>
+              <Settings size={24} color="white" />
+            </View>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Skip button */}
       <Animated.View style={[styles.skipContainer, skipButtonStyle]}>
@@ -310,6 +359,24 @@ const styles = StyleSheet.create({
   },
   cursor: {
     fontWeight: 'bold',
+  },
+  iconsContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  iconRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 30,
+  },
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   skipContainer: {
     position: 'absolute',

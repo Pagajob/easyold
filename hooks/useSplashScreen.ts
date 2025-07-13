@@ -1,22 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function useSplashScreen() {
   const [showSplash, setShowSplash] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    // Afficher le splash screen seulement si l'utilisateur n'est pas connecté
-    // ou lors du premier lancement de l'application
-    if (user) {
-      // Si l'utilisateur est connecté, ne pas afficher le splash
-      setShowSplash(false);
-    }
-    // Si l'utilisateur n'est pas connecté, afficher le splash
+    // Vérifier si c'est le premier lancement de l'application
+    const checkFirstLaunch = async () => {
+      try {
+        const hasLaunched = await AsyncStorage.getItem('app_has_launched');
+        
+        if (user && hasLaunched === 'true') {
+          // Si l'utilisateur est connecté et ce n'est pas le premier lancement, ne pas afficher le splash
+          setShowSplash(false);
+        } else {
+          // Marquer l'application comme lancée
+          await AsyncStorage.setItem('app_has_launched', 'true');
+          // Afficher le splash screen
+          setShowSplash(true);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification du premier lancement:', error);
+        // En cas d'erreur, afficher le splash par défaut
+        setShowSplash(true);
+      }
+    };
+    
+    checkFirstLaunch();
   }, [user]);
 
-  const finishSplash = () => {
+  const finishSplash = async () => {
     setShowSplash(false);
+    // Marquer l'application comme lancée
+    await AsyncStorage.setItem('app_has_launched', 'true');
   };
 
   return {
