@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
-import React, { useState } from 'react';
+import React from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import ProfileGuard from '@/components/ProfileGuard';
 
