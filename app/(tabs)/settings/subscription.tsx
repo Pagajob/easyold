@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Scr
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getSubscriptions, buySubscription, restorePurchases } from '@/services/iapService';
-import { Check, Star, Shield, Users, FileText, Settings, ArrowRight, Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react-native';
+import { Check, Star, Shield, Users, FileText, Settings, ArrowRight, Calendar, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import { AbonnementUtilisateur } from '@/types/abonnement';
 
 const PLAN_FEATURES: Record<string, string[]> = {
