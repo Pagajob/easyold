@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, AppState, View } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -10,10 +10,10 @@ import { DataProvider } from '@/contexts/DataContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
+import AuthGuard from '@/components/AuthGuard';
 import SplashScreenComponent from '@/components/SplashScreen';
 import { useSplashScreen } from '@/hooks/useSplashScreen';
 import React from 'react';
-import AuthGuard from '@/components/AuthGuard';
 import ProfileGuard from '@/components/ProfileGuard';
 
 // Prevent splash screen from auto-hiding
@@ -29,9 +29,6 @@ function SplashScreenGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   useFrameworkReady();
-  
-  // État pour suivre si les polices sont chargées
-  const [fontsLoaded, setFontsLoaded] = useState(true);
   
   // Gérer les changements d'état de l'application pour le rafraîchissement du token
   useEffect(() => {
@@ -52,12 +49,8 @@ export default function RootLayout() {
     };
   }, []);
   
-  // Masquer le SplashScreen natif une fois que l'application est prête
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync().catch(console.error);
-    }
-  }, [fontsLoaded]);
+  // Initialize any app-wide resources here
+  const [fontsLoaded, fontError] = [true, null]; // Simplifié car nous ne chargeons pas de polices personnalisées
   
   // Planifier le nettoyage des fichiers expirés
   useEffect(() => {
@@ -91,6 +84,18 @@ export default function RootLayout() {
     
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      // Hide splash screen once fonts are loaded or if there's an error
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Return null to keep splash screen visible while fonts load
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
 
   return (
     <ThemeProvider>
