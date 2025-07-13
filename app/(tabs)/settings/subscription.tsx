@@ -97,6 +97,122 @@ export default function SubscriptionScreen() {
     } finally {
       setProcessing('');
     }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setRestoring(true);
+      await restorePurchases();
+      await refreshAbonnement();
+      Alert.alert('Succès', 'Vos achats ont été restaurés.');
+    } catch (e) {
+      Alert.alert('Erreur', 'Impossible de restaurer les achats.');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const renderCurrentSubscription = () => {
+    if (!abonnementUtilisateur) return null;
+
+    const isActive = abonnementUtilisateur.statut === 'actif';
+    const statusColor = isActive ? colors.success : colors.error;
+    const statusText = isActive ? 'Actif' : 'Expiré';
+
+    return (
+      <View style={styles.currentSubscriptionContainer}>
+        <View style={styles.currentSubscriptionHeader}>
+          <Text style={styles.currentSubscriptionTitle}>Mon abonnement actuel</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+            <CheckCircle size={16} color={statusColor} />
+            <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.planInfoCard}>
+          <View style={styles.planInfoHeader}>
+            <Star size={24} color={colors.primary} />
+            <Text style={styles.planInfoName}>{abonnementUtilisateur.abonnement}</Text>
+          </View>
+          
+          <View style={styles.planInfoDetails}>
+            <View style={styles.planInfoRow}>
+              <Calendar size={16} color={colors.textSecondary} />
+              <Text style={styles.planInfoLabel}>Début:</Text>
+              <Text style={styles.planInfoValue}>
+                {abonnementUtilisateur.dateDebut ? new Date(abonnementUtilisateur.dateDebut).toLocaleDateString('fr-FR') : 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.planInfoRow}>
+              <Clock size={16} color={colors.textSecondary} />
+              <Text style={styles.planInfoLabel}>Fin:</Text>
+              <Text style={styles.planInfoValue}>
+                {abonnementUtilisateur.dateFin ? new Date(abonnementUtilisateur.dateFin).toLocaleDateString('fr-FR') : 'N/A'}
+              </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity style={styles.changePlanButton}>
+            <Text style={styles.changePlanButtonText}>Changer de formule</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const PlanCard: React.FC<PlanCardProps> = ({ title, price, features, isCurrentPlan, onSelect, isLoading, icon: Icon }) => {
+    const styles = createStyles(colors);
+    
+    return (
+      <View style={[styles.planCard, isCurrentPlan && styles.currentPlanCard]}>
+        <View style={styles.planHeader}>
+          <Icon size={20} color={colors.primary} />
+          <Text style={styles.planTitle}>{title}</Text>
+          {isCurrentPlan && (
+            <View style={styles.currentPlanBadge}>
+              <Text style={styles.currentPlanBadgeText}>ACTUEL</Text>
+            </View>
+          )}
+        </View>
+        
+        <Text style={styles.planPrice}>
+          {price === 0 ? 'Gratuit' : `${price}€/mois`}
+        </Text>
+        
+        <View style={styles.featuresList}>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <Check size={14} color={colors.success} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
+        
+        <TouchableOpacity
+          style={[
+            styles.planButton,
+            isCurrentPlan && styles.currentPlanButton,
+            (isLoading || isCurrentPlan) && styles.disabledButton
+          ]}
+          onPress={onSelect}
+          disabled={isLoading || isCurrentPlan}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.planButtonText}>
+              {isCurrentPlan ? 'Plan actuel' : 'Souscrire'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const styles = createStyles(colors);
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Gérer mon abonnement</Text>
       
       {/* Success message */}
