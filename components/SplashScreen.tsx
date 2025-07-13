@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -24,6 +24,7 @@ interface SplashScreenProps {
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const { colors } = useTheme();
+  const [isReady, setIsReady] = useState(false);
   
   // Shared values for animations
   const logoScale = useSharedValue(0);
@@ -36,6 +37,22 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   
   const canSkip = useRef(false);
   const animationFinished = useRef(false);
+
+  // Précharger les ressources nécessaires
+  useEffect(() => {
+    const prepareResources = async () => {
+      try {
+        // Simuler le chargement des ressources
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsReady(true);
+      } catch (error) {
+        console.error('Erreur lors du chargement des ressources:', error);
+        setIsReady(true); // Continuer malgré l'erreur
+      }
+    };
+    
+    prepareResources();
+  }, []);
 
   const slogan = "Votre gestion de flotte simplifiée";
   const sloganWords = slogan.split(' ');
@@ -181,8 +198,10 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   };
 
   useEffect(() => {
-    startAnimation();
-  }, []);
+    if (isReady) {
+      startAnimation();
+    }
+  }, [isReady]);
 
   return (
     <View style={styles.container}>
@@ -236,8 +255,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent', // S'assurer qu'il n'y a pas de fond blanc
+    alignItems: 'center', 
+    backgroundColor: Platform.OS === 'web' ? 'transparent' : '#8B5CF6', // Couleur de base pour éviter le flash blanc sur mobile
   },
   background: {
     position: 'absolute',
