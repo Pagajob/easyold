@@ -3,9 +3,9 @@ import { Platform } from 'react-native';
 
 // IDs des produits d'abonnement créés sur App Store Connect
 export const productIds = [
-  'com.allanox.easygarage.app.essentiel',
-  'com.allanox.easygarage.app.pro',
-  'com.allanox.easygarage.app.premium',
+  'easygarage.essentiel',
+  'easygarage.pro',
+  'easygarage.premium',
 ];
 
 export async function initIAP() {
@@ -27,28 +27,28 @@ export async function getSubscriptions() {
       // Mock data for web platform
       return [
         {
-          productId: 'com.allanox.easygarage.app.essentiel',
+          productId: 'easygarage.essentiel',
           title: 'Essentiel',
           description: '5 véhicules, 50 réservations/mois, 1 utilisateur, EDL 7 jours, export CSV/PDF, logo perso',
-          price: '29.00',
+          price: '6.99',
           currency: 'EUR',
-          localizedPrice: '29,00 €',
+          localizedPrice: '6,99 €/semaine',
         },
         {
-          productId: 'com.allanox.easygarage.app.pro',
+          productId: 'easygarage.pro',
           title: 'Pro',
           description: '30 véhicules, réservations illimitées, 5 utilisateurs, EDL 1 mois, stats avancées, support prioritaire',
-          price: '49.00',
+          price: '12.99',
           currency: 'EUR',
-          localizedPrice: '49,00 €',
+          localizedPrice: '12,99 €/semaine',
         },
         {
-          productId: 'com.allanox.easygarage.app.premium',
+          productId: 'easygarage.premium',
           title: 'Premium',
           description: 'Véhicules et utilisateurs illimités, EDL 1 an, multi-sociétés, automatisations, API adresse, support téléphonique',
-          price: '99.00',
+          price: '24.99',
           currency: 'EUR',
-          localizedPrice: '99,00 €',
+          localizedPrice: '24,99 €/semaine',
         }
       ];
     } else {

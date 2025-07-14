@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, SafeAreaView, Image } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getSubscriptions } from '@/services/iapService';
@@ -8,7 +8,7 @@ import { Check, Star, Shield, Users, FileText, ArrowRight } from 'lucide-react-n
 const PLAN_FEATURES: Record<string, string[]> = {
   'Gratuit': [
     '1 véhicule',
-    '5 réservations',
+    '3 réservations',
     '1 utilisateur',
     'EDL local 24h',
     'Aucune exportation',
@@ -48,7 +48,7 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 export default function SubscriptionScreen() {
-  const { abonnementUtilisateur, acheterAbonnement, refreshAbonnement } = useAuth();
+  const { abonnementUtilisateur, acheterAbonnement, refreshAbonnement, user, updateUserProfile } = useAuth();
   const { colors } = useTheme();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,21 +58,55 @@ export default function SubscriptionScreen() {
     (async () => {
       setLoading(true);
       const subs = await getSubscriptions();
-      setPlans(subs);
+      
+      // Remplacer les prix par les prix hebdomadaires
+      const updatedSubs = subs.map(sub => {
+        if (sub.title === 'Essentiel') {
+          return { ...sub, price: '6.99', localizedPrice: '6,99 €/semaine' };
+        } else if (sub.title === 'Pro') {
+          return { ...sub, price: '12.99', localizedPrice: '12,99 €/semaine' };
+        } else if (sub.title === 'Premium') {
+          return { ...sub, price: '24.99', localizedPrice: '24,99 €/semaine' };
+        }
+        return sub;
+      });
+      
+      setPlans(updatedSubs);
       setLoading(false);
     })();
   }, []);
 
-  const handleUpgrade = async (productId: string) => {
+  const handleUpgrade = async (productId: string, planName: string) => {
     try {
       setProcessing(productId);
+      
+      // Initier l'achat via l'App Store
       await acheterAbonnement(productId);
+      
+      // Mettre à jour le profil utilisateur avec le plan choisi
+      if (user) {
+        await updateUserProfile({
+          plan: planName.toLowerCase()
+        });
+      }
+      
+      // Rafraîchir les informations d'abonnement
       await refreshAbonnement();
+      
       Alert.alert('Abonnement mis à jour', 'Votre abonnement a bien été activé.');
     } catch (e) {
-      Alert.alert('Erreur', 'Impossible de finaliser l’abonnement.');
+      Alert.alert('Erreur', 'Impossible de finaliser l'abonnement.');
     } finally {
       setProcessing('');
+    }
+  };
+
+  const getProductId = (planName: string): string => {
+    switch (planName) {
+      case 'Essentiel': return 'easygarage.essentiel';
+      case 'Pro': return 'easygarage.pro';
+      case 'Premium': return 'easygarage.premium';
+      default: return '';
     }
   };
 
@@ -106,61 +140,96 @@ export default function SubscriptionScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.pageTitle}>Gérer mon abonnement</Text>
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Abonnement en cours</Text>
           {renderCurrentPlan()}
         </View>
+        
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Changer de formule</Text>
-          {loading ? <ActivityIndicator color={colors.primary} /> : (
-            plans.map(plan => {
-              const Icon = PLAN_ICONS[plan.title] || Star;
-              const isCurrent = abonnementUtilisateur?.abonnement === plan.title;
-              return (
-                <View key={plan.productId} style={[styles.planCard, isCurrent && styles.planCardCurrent]}>
-                  <View style={styles.planHeader}>
-                    <Icon size={28} color={colors.primary} style={{ marginRight: 10 }} />
-                    <Text style={styles.planTitle}>{plan.title}</Text>
-                    {isCurrent && (
-                      <View style={[styles.badge, { backgroundColor: colors.primary }]}> 
-                        <Text style={styles.badgeText}>Plan actuel</Text>
-                      </View>
-                    )}
+          <Text style={styles.sectionTitle}>Choisir un forfait</Text>
+          
+          {loading ? (
+            <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 30 }} />
+          ) : (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.plansContainer}
+            >
+              {plans.map(plan => {
+                const Icon = PLAN_ICONS[plan.title] || Star;
+                const isCurrent = abonnementUtilisateur?.abonnement === plan.title;
+                const productId = getProductId(plan.title);
+                
+                return (
+                  <View key={plan.productId || productId} style={[
+                    styles.planCard,
+                    isCurrent && styles.planCardCurrent
+                  ]}>
+                    <View style={styles.planHeader}>
+                      <Icon size={28} color={colors.primary} />
+                      <Text style={styles.planTitle}>{plan.title}</Text>
+                    </View>
+                    
+                    <Text style={styles.planPrice}>{plan.localizedPrice}</Text>
+                    
+                    <View style={styles.featuresList}>
+                      {PLAN_FEATURES[plan.title]?.map((feature, i) => (
+                        <View key={i} style={styles.featureRow}>
+                          <Check size={16} color={colors.success} />
+                          <Text style={styles.featureText}>{feature}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    
+                    <TouchableOpacity
+                      style={[
+                        styles.chooseButton,
+                        (isCurrent || processing === (plan.productId || productId)) && styles.chooseButtonDisabled
+                      ]}
+                      onPress={() => handleUpgrade(plan.productId || productId, plan.title)}
+                      disabled={isCurrent || processing === (plan.productId || productId)}
+                    >
+                      {processing === (plan.productId || productId) ? (
+                        <ActivityIndicator color={colors.background} size="small" />
+                      ) : (
+                        <Text style={styles.chooseButtonText}>
+                          {isCurrent ? 'Plan actuel' : 'Choisir ce plan'}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
-                  <Text style={styles.planPrice}>{plan.localizedPrice}</Text>
-                  <View style={styles.featuresList}>
-                    {PLAN_FEATURES[plan.title]?.map((f, i) => (
-                      <View key={i} style={styles.featureRow}>
-                        <Check size={16} color={colors.success} style={{ marginRight: 6 }} />
-                        <Text style={styles.featureText}>{f}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.chooseButton, isCurrent && styles.chooseButtonSelected]}
-                    onPress={() => handleUpgrade(plan.productId)}
-                    disabled={processing === plan.productId || isCurrent}
-                    activeOpacity={0.8}
-                  >
-                    {processing === plan.productId ? (
-                      <ActivityIndicator color={colors.background} />
-                    ) : (
-                      <Text style={styles.chooseButtonText}>
-                        {isCurrent ? 'Plan actuel' : 'Choisir ce plan'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              );
-            })
+                );
+              })}
+            </ScrollView>
           )}
         </View>
+        
         <View style={{ alignItems: 'center', marginTop: 8 }}>
-          <TouchableOpacity style={styles.restoreButton} onPress={() => Alert.alert('Restaurer', 'Fonctionnalité à venir')}> 
-            <Text style={styles.restoreText}>Restaurer un achat</Text>
+          <TouchableOpacity 
+            style={styles.restoreButton} 
+            onPress={async () => {
+              try {
+                setLoading(true);
+                const restored = await refreshAbonnement();
+                if (restored) {
+                  Alert.alert('Succès', 'Vos achats ont été restaurés avec succès.');
+                } else {
+                  Alert.alert('Information', 'Aucun achat à restaurer n\'a été trouvé.');
+                }
+              } catch (error) {
+                Alert.alert('Erreur', 'Impossible de restaurer vos achats.');
+              } finally {
+                setLoading(false);
+              }
+            }}
+          > 
+            <Text style={styles.restoreText}>Restaurer mes achats</Text>
             <ArrowRight size={18} color={colors.primary} />
           </TouchableOpacity>
         </View>
+        
         <View style={{ height: 48 }} />
       </ScrollView>
     </SafeAreaView>
@@ -247,11 +316,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+  plansContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    gap: 16,
+  },
   planCard: {
     backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 20,
-    marginBottom: 18,
+    width: 280,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
@@ -266,20 +340,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
+    gap: 10,
   },
   planTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    marginRight: 8,
   },
   featuresList: {
-    marginVertical: 8,
+    marginVertical: 16,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 8,
+    gap: 8,
   },
   featureText: {
     fontSize: 15,
@@ -292,8 +367,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  chooseButtonSelected: {
-    backgroundColor: colors.disabled,
+  chooseButtonDisabled: {
+    backgroundColor: colors.disabled || colors.border,
   },
   chooseButtonText: {
     color: '#fff',
@@ -304,7 +379,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
     borderRadius: 28,
     paddingVertical: 14,
     paddingHorizontal: 28,
@@ -317,9 +392,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 1,
   },
   restoreText: {
-    color: '#fff',
+    color: colors.primary,
     fontWeight: '700',
     fontSize: 16,
     marginRight: 8,
   },
-}); 
+});
