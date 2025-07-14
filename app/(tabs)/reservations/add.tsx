@@ -17,7 +17,7 @@ import { useClients } from '@/hooks/useClients';
 import { useVehicles } from '@/hooks/useVehicles';
 import { CalendarPicker } from '@/components/CalendarPicker';
 import { DualDatePicker } from '@/components/DualDatePicker';
-import { ArrowLeft, Calendar, User, Car, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, Calendar, User, Car, CircleAlert as AlertCircle } from 'lucide-react-native';
 
 export default function AddReservationScreen() {
   const router = useRouter();
