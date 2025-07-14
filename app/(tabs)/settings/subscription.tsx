@@ -152,9 +152,11 @@ export default function SubscriptionScreen() {
           {loading ? (
             <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 30 }} />
           ) : (
-            <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 30 }} />
-          ) : (
-            <View style={styles.plansContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.plansContainer}
+            >
               {plans.map(plan => {
                 const Icon = PLAN_ICONS[plan.title] || Star;
                 const isCurrent = abonnementUtilisateur?.abonnement === plan.title;
@@ -200,7 +202,7 @@ export default function SubscriptionScreen() {
                   </View>
                 );
               })}
-            </View>
+            </ScrollView>
           )}
         </View>
         
@@ -315,14 +317,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 13,
   },
   plansContainer: {
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     gap: 16,
   },
   planCard: {
     backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 20,
-    width: '100%',
+    width: 280,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.07,
