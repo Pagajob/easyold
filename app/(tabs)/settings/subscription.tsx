@@ -95,7 +95,7 @@ export default function SubscriptionScreen() {
       
       Alert.alert('Abonnement mis à jour', 'Votre abonnement a bien été activé.');
     } catch (e) {
-      Alert.alert('Erreur', "Impossible de finaliser l'abonnement.");
+      Alert.alert('Erreur', 'Impossible de finaliser l\'abonnement.');
     } finally {
       setProcessing('');
     }
