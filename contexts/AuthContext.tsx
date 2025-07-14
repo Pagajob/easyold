@@ -41,6 +41,7 @@ export interface UserProfile {
   isEmailVerified: boolean;
   role?: string;
   companyId?: string;
+  plan?: string;
 }
 
 interface AuthContextType {
@@ -418,6 +419,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fonction utilitaire pour vérifier si l'email d'un utilisateur est vérifié
   const isEmailVerified = () => {
     return user?.emailVerified || false;
+  };
+
+  // Vérifier les restrictions d'abonnement
+  const checkSubscriptionLimits = (vehicleCount: number, reservationCount: number) => {
+    // Si l'utilisateur n'a pas de plan, limiter à 1 véhicule et 3 réservations
+    if (!userProfile?.plan) {
+      return {
+        vehiclesAllowed: vehicleCount < 1,
+        reservationsAllowed: reservationCount < 3
+      };
+    }
+    
+    // Vérifier les limites selon le plan
+    switch(userProfile.plan) {
+      case 'essentiel':
+        return {
+          vehiclesAllowed: vehicleCount < 5,
+          reservationsAllowed: reservationCount < 50
+        };
+      case 'pro':
+        return {
+          vehiclesAllowed: vehicleCount < 30,
+          reservationsAllowed: true // illimité
+        };
+      case 'premium':
+        return {
+          vehiclesAllowed: true, // illimité
+          reservationsAllowed: true // illimité
+        };
+      default:
+        return {
+          vehiclesAllowed: vehicleCount < 1,
+          reservationsAllowed: reservationCount < 3
+        };
+    }
   };
 
   // Récupérer l'abonnement utilisateur depuis Firestore

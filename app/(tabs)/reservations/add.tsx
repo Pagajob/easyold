@@ -15,7 +15,7 @@ import CalendarPicker from '@/components/CalendarPicker';
 export default function AddReservationScreen() {
   const { colors } = useTheme();
   const { vehicles, clients, reservations, addReservation, addClient } = useData();
-  const { user, abonnementUtilisateur } = useAuth();
+  const { user, userProfile } = useAuth();
   const [showRestrictionModal, setShowRestrictionModal] = useState(false);
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -730,9 +730,12 @@ export default function AddReservationScreen() {
   const styles = createStyles(colors);
 
   // Contrôle de la limite d'abonnement
-  const reservationsMax = abonnementUtilisateur?.reservationsMax ?? 5;
+  const reservationsMax = userProfile?.plan === 'essentiel' ? 50 : 
+                         userProfile?.plan === 'pro' ? 999 : 
+                         userProfile?.plan === 'premium' ? 999 : 3;
+                         
   useEffect(() => {
-    // Si le plan a une limite numérique (pas "illimité")
+    if (reservations.length >= reservationsMax) {
     if (typeof reservationsMax === 'number' && reservations.length >= reservationsMax) {
       setShowRestrictionModal(true);
     }
@@ -746,7 +749,7 @@ export default function AddReservationScreen() {
             Fonctionnalité réservée aux abonnés
           </Text>
           <Text style={{ fontSize: 16, color: colors.textSecondary, marginBottom: 24, textAlign: 'center' }}>
-            Vous avez atteint la limite de réservations de votre abonnement. Abonnez-vous via l’App Store pour continuer.
+            Vous avez atteint la limite de réservations de votre abonnement ({reservationsMax} réservation{reservationsMax > 1 ? 's' : ''}). Abonnez-vous via l'App Store pour continuer.
           </Text>
           <TouchableOpacity
             style={{ backgroundColor: colors.primary, borderRadius: 28, paddingVertical: 14, paddingHorizontal: 32 }}

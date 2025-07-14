@@ -16,7 +16,7 @@ const STATUT_OPTIONS = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'];
 export default function AddVehicleScreen() {
   const { colors } = useTheme();
   const { addVehicle } = useData();
-  const { user, abonnementUtilisateur } = useAuth();
+  const { user, userProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showRestrictionModal, setShowRestrictionModal] = useState(false);
   
@@ -318,7 +318,10 @@ export default function AddVehicleScreen() {
 
   // Contrôle de la limite d'abonnement
   const { vehicles } = useData();
-  const vehiculesMax = abonnementUtilisateur?.vehiculesMax ?? 1;
+  const vehiculesMax = userProfile?.plan === 'essentiel' ? 5 : 
+                      userProfile?.plan === 'pro' ? 30 : 
+                      userProfile?.plan === 'premium' ? 999 : 1;
+                      
   useEffect(() => {
     if (vehicles.length >= vehiculesMax) {
       setShowRestrictionModal(true);
@@ -333,7 +336,7 @@ export default function AddVehicleScreen() {
             Fonctionnalité réservée aux abonnés
           </Text>
           <Text style={{ fontSize: 16, color: colors.textSecondary, marginBottom: 24, textAlign: 'center' }}>
-            Vous avez atteint la limite de véhicules de votre abonnement. Abonnez-vous via l’App Store pour continuer.
+            Vous avez atteint la limite de véhicules de votre abonnement ({vehiculesMax} véhicule{vehiculesMax > 1 ? 's' : ''}). Abonnez-vous via l'App Store pour continuer.
           </Text>
           <TouchableOpacity
             style={{ backgroundColor: colors.primary, borderRadius: 28, paddingVertical: 14, paddingHorizontal: 32 }}
