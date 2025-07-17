@@ -103,7 +103,7 @@ export default function ReservationCard({
         }
         
         // For web, open in new tab
-        if (Platform.OS === 'web') {
+        if ((Platform.OS as string) === 'web') {
           window.open(reservation.contratGenere, '_blank');
         } else {
           // For mobile, use Linking
@@ -111,7 +111,7 @@ export default function ReservationCard({
           if (supported) {
             await Linking.openURL(reservation.contratGenere);
           } else {
-            if (Platform.OS === 'web') {
+            if ((Platform.OS as string) === 'web') {
               window.alert('Impossible d\'ouvrir le contrat. URL non supportée.');
             } else {
               Alert.alert('Erreur', 'Impossible d\'ouvrir le contrat. URL non supportée.');
@@ -120,7 +120,7 @@ export default function ReservationCard({
         }
       } catch (error) {
         console.error('Erreur lors de l\'ouverture du contrat:', error);
-        if (Platform.OS === 'web') {
+        if ((Platform.OS as string) === 'web') {
           window.alert('Impossible d\'ouvrir le contrat. Veuillez réessayer.');
         } else {
           Alert.alert('Erreur', 'Impossible d\'ouvrir le contrat. Veuillez réessayer.');

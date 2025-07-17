@@ -8,9 +8,9 @@ import {
   Platform, 
   Dimensions,
   Animated,
-  Pressable,
-  BlurView
+  Pressable
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Download, X, Check, FileText } from 'lucide-react-native';
 
@@ -223,13 +223,7 @@ const ExportSuccessModal = ({
           ]}
         >
           <Pressable onPress={e => e.stopPropagation()}>
-            {Platform.OS === 'ios' && (
-              <BlurView
-                style={styles.blurView}
-                blurType="light"
-                blurAmount={20}
-              />
-            )}
+            {Platform.OS === 'ios' && <BlurView intensity={30} style={styles.blurView} />}
             
             <TouchableOpacity style={styles.closeIconButton} onPress={onClose}>
               <X size={16} color={colors.text} />

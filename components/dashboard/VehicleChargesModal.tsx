@@ -157,6 +157,8 @@ export default function VehicleChargesModal({
 
   const styles = createStyles(colors);
 
+  const isBuiltInCost = (cost: any): cost is { isBuiltIn: boolean } => typeof cost.isBuiltIn === 'boolean';
+
   return (
     <>
       <Modal
@@ -224,7 +226,7 @@ export default function VehicleChargesModal({
                         index === allCosts.length - 1 && styles.lastCostItem
                       ]}
                       onPress={() => handleEditCharge(cost)}
-                      activeOpacity={cost.isBuiltIn ? 1 : 0.7}
+                      activeOpacity={isBuiltInCost(cost) && cost.isBuiltIn ? 1 : 0.7}
                     >
                       <View style={styles.costItemHeader}>
                         <Text style={styles.costItemName}>{cost.nom}</Text>
@@ -241,16 +243,15 @@ export default function VehicleChargesModal({
                             </Text>
                           </View>
                           
-                          {!cost.isBuiltIn && (
+                          {isBuiltInCost(cost) && !cost.isBuiltIn && (
                             <TouchableOpacity
                               style={styles.deleteButton}
                               onPress={() => {
-                                if (!cost.isBuiltIn) {
+                                if (!isBuiltInCost(cost) || !cost.isBuiltIn) {
                                   handleDeleteCharge(cost.id, cost.nom);
                                 }
                               }}
-                              disabled={cost.isBuiltIn}
-                              opacity={cost.isBuiltIn ? 0.5 : 1}
+                              disabled={isBuiltInCost(cost) && cost.isBuiltIn}
                             >
                               <Trash2 size={16} color={colors.error} />
                             </TouchableOpacity>
@@ -271,7 +272,7 @@ export default function VehicleChargesModal({
                         </Text>
                       </View>
                       
-                      {cost.isBuiltIn && (
+                      {isBuiltInCost(cost) && cost.isBuiltIn && (
                         <Text style={styles.builtInNote}>
                           Coût lié aux propriétés du véhicule
                         </Text>

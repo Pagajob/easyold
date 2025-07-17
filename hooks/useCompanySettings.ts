@@ -1,4 +1,4 @@
-import { useSettings } from '@/contexts/SettingsContext';
+import { useSettings, CompanyInfo } from '@/contexts/SettingsContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useCompanySettings() {

@@ -203,44 +203,34 @@ export default function EDLHistoryView({
                     </Text>
                   </View>
                   
-                  {type === 'depart' && (
-                    <>
-                      <View style={styles.detailRow}>
-                        <MapPin size={14} color={colors.textSecondary} />
-                        <Text style={styles.detailLabel}>Type:</Text>
-                        <Text style={styles.detailValue}>
-                          {edlData.type}
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.detailRow}>
-                        <Fuel size={14} color={colors.textSecondary} />
-                        <Text style={styles.detailLabel}>Carburant:</Text>
-                        <Text style={styles.detailValue}>
-                          {edlData.carburant}/8
-                        </Text>
-                      </View>
-                    </>
+                  {type === 'depart' && 'carburant' in edlData && (
+                    <View style={styles.detailRow}>
+                      <Fuel size={14} color={colors.textSecondary} />
+                      <Text style={styles.detailLabel}>Carburant:</Text>
+                      <Text style={styles.detailValue}>
+                        {typeof edlData.carburant === 'number' ? edlData.carburant : '-'} /8
+                      </Text>
+                    </View>
                   )}
                   
-                  {type === 'retour' && (
-                    <>
-                      <View style={styles.detailRow}>
-                        <MapPin size={14} color={colors.textSecondary} />
-                        <Text style={styles.detailLabel}>Km retour:</Text>
-                        <Text style={styles.detailValue}>
-                          {edlData.kmRetour?.toLocaleString()} km
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.detailRow}>
-                        <Fuel size={14} color={colors.textSecondary} />
-                        <Text style={styles.detailLabel}>Carburant retour:</Text>
-                        <Text style={styles.detailValue}>
-                          {edlData.carburantRetour}/8
-                        </Text>
-                      </View>
-                    </>
+                  {type === 'retour' && 'kmRetour' in edlData && (
+                    <View style={styles.detailRow}>
+                      <MapPin size={14} color={colors.textSecondary} />
+                      <Text style={styles.detailLabel}>Km retour:</Text>
+                      <Text style={styles.detailValue}>
+                        {typeof edlData.kmRetour === 'number' ? edlData.kmRetour.toLocaleString() + ' km' : '-'}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {type === 'retour' && 'carburantRetour' in edlData && (
+                    <View style={styles.detailRow}>
+                      <Fuel size={14} color={colors.textSecondary} />
+                      <Text style={styles.detailLabel}>Carburant retour:</Text>
+                      <Text style={styles.detailValue}>
+                        {typeof edlData.carburantRetour === 'number' ? edlData.carburantRetour : '-'} /8
+                      </Text>
+                    </View>
                   )}
                 </View>
 

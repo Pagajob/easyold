@@ -1,3 +1,6 @@
+import { db } from '@/config/firebase';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+
 export async function POST(request: Request) {
   try {
     let body;
@@ -27,31 +30,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Import Firestore functions using ESM syntax
-    // Use ESM import syntax
-    const firestoreModule = await import('firebase/firestore');
-    const { getFirestore, collection, addDoc, Timestamp } = firestoreModule;
-    
-    const appModule = await import('firebase/app');
-    const { initializeApp, getApps } = appModule;
-    
-    // Initialize Firebase if not already done
-    let app;
-    if (getApps().length === 0) {
-      app = initializeApp({
-        apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID
-      });
-    } else {
-      app = getApps()[0];
-    }
-
-    const db = getFirestore(app);
-    
     // Create the charge
     const chargeData = {
       nom,

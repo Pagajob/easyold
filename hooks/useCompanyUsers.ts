@@ -50,7 +50,7 @@ export function useCompanyUsers() {
         setUsers(companyUsers);
         
         // Get pending invitations
-        const invitationData = await InvitationService.getByCompany(userProfile.companyId);
+        const invitationData = await InvitationService.getByCompany(userProfile.companyId!);
         setInvitations(invitationData.filter(inv => inv.status === 'pending'));
         
       } catch (error) {

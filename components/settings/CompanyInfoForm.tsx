@@ -71,6 +71,7 @@ export default function CompanyInfoForm() {
           const blob = await response.blob();
           
           // Upload the blob to Firebase Storage
+          // @ts-ignore
           const downloadUrl = await uploadLogo(blob);
           logoUrl = downloadUrl;
         } catch (uploadError) {

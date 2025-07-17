@@ -160,7 +160,6 @@ export default function ReservationsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
             {/* Animated content that will collapse/expand */}
             <Animated.View style={[
               styles.collapsibleContent,
@@ -185,7 +184,6 @@ export default function ReservationsScreen() {
                   <Text style={styles.statLabel}>En cours</Text>
                 </View>
               </View>
-
               {/* Barre de recherche */}
               <View style={styles.searchContainer}>
                 <View style={styles.searchBar}>
@@ -199,123 +197,104 @@ export default function ReservationsScreen() {
                   />
                 </View>
               </View>
-
-              {/* Filtres */}
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                style={styles.filtersContainer}
-                contentContainerStyle={styles.filtersContent}
-              >
-                {STATUS_FILTERS.map((filter) => (
-                  <TouchableOpacity
-                    key={filter.key}
-                    style={[
-                      styles.filterButton,
-                      activeFilter === filter.key && styles.filterButtonActive,
-                      activeFilter === filter.key && { backgroundColor: filter.color }
-                    ]}
-                    onPress={() => setActiveFilter(filter.key)}
-                  >
-                    <Text style={[
-                      styles.filterText,
-                      activeFilter === filter.key && styles.filterTextActive
-                    ]}>
-                      <Text>
-                        {filter.key === 'Planifiée' ? '🗓️ ' : 
-                         filter.key === 'Confirmé' ? '✅ ' : 
-                         filter.key === 'En cours' ? '🚗 ' : 
-                         filter.key === 'Terminé' ? '✔️ ' : 
-                         filter.key === 'Annulé' ? '❌ ' : 
-                         '🔍 '}
-                      {filter.label}
-                      </Text>
-                    </Text>
-                    {filter.key !== 'all' && (
-                      <View style={[
-                        styles.filterBadge,
-                        activeFilter === filter.key && styles.filterBadgeActive
-                      ]}>
-                        <Text style={[
-                          styles.filterBadgeText,
-                          activeFilter === filter.key && styles.filterBadgeTextActive
-                        ]}>
-                          {filter.key === 'Planifiée' ? stats.planifiee :
-                           filter.key === 'Confirmé' ? stats.confirmee :
-                           filter.key === 'En cours' ? stats.enCours :
-                           filter.key === 'Terminé' ? stats.terminee :
-                           stats.annulee}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
             </Animated.View>
-
-            {/* Always visible search bar when collapsed */}
-            {isFilterCollapsed && (
-              <View style={styles.collapsedSearchContainer}>
-                <View style={styles.searchBar}>
-                  <Search size={20} color={colors.textSecondary} />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Rechercher par véhicule, client ou type..."
-                    placeholderTextColor={colors.textSecondary}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                </View>
-              </View>
-            )}
           </View>
         </Animated.View>
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {filteredReservations.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Calendar size={64} color={colors.textSecondary} />
-              <Text style={styles.emptyTitle}>
-                {searchQuery || activeFilter !== 'all' 
-                  ? 'Aucune réservation trouvée' 
-                  : 'Aucune réservation'
-                }
+        {/* Filtres TOUJOURS visibles au-dessus de la liste des réservations */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={[styles.filtersContainer, isFilterCollapsed && { marginTop: 18 }]}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {STATUS_FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter.key}
+              style={[
+                styles.filterButton,
+                activeFilter === filter.key && styles.filterButtonActive,
+                activeFilter === filter.key && { backgroundColor: filter.color }
+              ]}
+              onPress={() => setActiveFilter(filter.key)}
+            >
+              <Text style={[
+                styles.filterText,
+                activeFilter === filter.key && styles.filterTextActive
+              ]}>
+                <Text>
+                  {filter.key === 'Planifiée' ? '🗓️ ' : 
+                   filter.key === 'Confirmé' ? '✅ ' : 
+                   filter.key === 'En cours' ? '🚗 ' : 
+                   filter.key === 'Terminé' ? '✔️ ' : 
+                   filter.key === 'Annulé' ? '❌ ' : 
+                   '🔍 '}
+                  {filter.label}
+                </Text>
               </Text>
-              <Text style={styles.emptySubtitle}>
-                {searchQuery || activeFilter !== 'all'
-                  ? 'Essayez de modifier vos critères de recherche'
-                  : 'Commencez par créer votre première réservation'
-                }
-              </Text>
-              {(!searchQuery && activeFilter === 'all') && (
-                <TouchableOpacity 
-                  style={styles.emptyActionButton}
-                  onPress={() => router.push('/reservations/add')}
-                >
-                  <Plus size={20} color={colors.background} />
-                  <Text style={styles.emptyActionText}>Nouvelle réservation</Text>
-                </TouchableOpacity>
+              {filter.key !== 'all' && (
+                <View style={[
+                  styles.filterBadge,
+                  activeFilter === filter.key && styles.filterBadgeActive
+                ]}>
+                  <Text style={[
+                    styles.filterBadgeText,
+                    activeFilter === filter.key && styles.filterBadgeTextActive
+                  ]}>
+                    {filter.key === 'Planifiée' ? stats.planifiee :
+                     filter.key === 'Confirmé' ? stats.confirmee :
+                     filter.key === 'En cours' ? stats.enCours :
+                     filter.key === 'Terminé' ? stats.terminee :
+                     stats.annulee}
+                  </Text>
+                </View>
               )}
-            </View>
-          ) : (
-            <View style={styles.reservationsList}>
-              {filteredReservations
-                .sort((a, b) => new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime())
-                .map((reservation) => (
-                  <ReservationCard
-                    key={reservation.id}
-                    reservation={reservation}
-                    vehicleName={getVehicleName(reservation.vehiculeId)}
-                    clientName={getClientName(reservation.clientId)}
-                    onPress={() => router.push(`/reservations/details/${reservation.id}`)}
-                    onEdit={() => handleEditReservation(reservation)}
-                    onEDLPress={() => router.push(`/reservations/edl/${reservation.id}`)}
-                    canStartEDL={canStartEDL(reservation)}
-                  />
-                ))}
-            </View>
-          )}
+            </TouchableOpacity>
+          ))}
         </ScrollView>
+        
+        {filteredReservations.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Calendar size={64} color={colors.textSecondary} />
+            <Text style={styles.emptyTitle}>
+              {searchQuery || activeFilter !== 'all' 
+                ? 'Aucune réservation trouvée' 
+                : 'Aucune réservation'
+              }
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {searchQuery || activeFilter !== 'all'
+                ? 'Essayez de modifier vos critères de recherche'
+                : 'Commencez par créer votre première réservation'
+              }
+            </Text>
+            {(!searchQuery && activeFilter === 'all') && (
+              <TouchableOpacity 
+                style={styles.emptyActionButton}
+                onPress={() => router.push('/reservations/add')}
+              >
+                <Plus size={20} color={colors.background} />
+                <Text style={styles.emptyActionText}>Nouvelle réservation</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.reservationsList}>
+            {filteredReservations
+              .sort((a, b) => new Date(b.dateDebut).getTime() - new Date(a.dateDebut).getTime())
+              .map((reservation) => (
+                <ReservationCard
+                  key={reservation.id}
+                  reservation={reservation}
+                  vehicleName={getVehicleName(reservation.vehiculeId)}
+                  clientName={getClientName(reservation.clientId)}
+                  onPress={() => router.push(`/reservations/details/${reservation.id}`)}
+                  onEdit={() => handleEditReservation(reservation)}
+                  onEDLPress={() => router.push(`/reservations/edl/${reservation.id}`)}
+                  canStartEDL={canStartEDL(reservation)}
+                />
+              ))}
+          </View>
+        )}
         
         {/* Modal de modification */}
         <EditReservationModal

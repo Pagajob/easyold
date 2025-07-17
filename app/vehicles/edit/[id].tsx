@@ -14,13 +14,14 @@ import { ArrowLeft, Save } from 'lucide-react-native';
 import { useVehicles } from '../../../hooks/useVehicles';
 import { useTheme } from '../../../contexts/ThemeContext';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import { Vehicle } from '@/contexts/DataContext';
 
 export default function EditVehicle() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams();
   const { vehicles, updateVehicle } = useVehicles();
   const [loading, setLoading] = useState(false);
-  const [vehicle, setVehicle] = useState(null);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   
   const [formData, setFormData] = useState({
     marque: '',
@@ -28,19 +29,26 @@ export default function EditVehicle() {
     immatriculation: '',
     annee: '',
     couleur: '',
-    carburant: 'Essence',
+    carburant: 'Essence' as 'Essence' | 'Diesel' | 'Électrique' | 'Hybride',
     transmission: 'Manuelle',
     nombrePlaces: '5',
     prixJour: '',
     kilometrage: '',
     numeroSerie: '',
-    statut: 'Disponible',
+    statut: 'Disponible' as 'Disponible' | 'Loué' | 'Maintenance' | 'Indisponible',
+    financement: 'Achat comptant' as 'Achat comptant' | 'Leasing' | 'LLD' | 'Mise à disposition',
+    assuranceMensuelle: '',
+    notes: '',
+    kilometrageJournalier: '',
+    photo: undefined as string | undefined,
+    prix_base_24h: 0,
   });
 
   useEffect(() => {
-    const foundVehicle = vehicles.find(v => v.id === id);
+    const vehicleId = Array.isArray(id) ? id[0] : id;
+    const foundVehicle = vehicles.find(v => v.id === vehicleId);
     if (foundVehicle) {
-      setVehicle(foundVehicle);
+      setVehicle(foundVehicle as Vehicle);
       setFormData({
         marque: foundVehicle.marque || '',
         modele: foundVehicle.modele || '',
@@ -54,6 +62,12 @@ export default function EditVehicle() {
         kilometrage: foundVehicle.kilometrage?.toString() || '',
         numeroSerie: foundVehicle.numeroSerie || '',
         statut: foundVehicle.statut || 'Disponible',
+        financement: foundVehicle.financement || 'Achat comptant',
+        assuranceMensuelle: foundVehicle.assuranceMensuelle?.toString() || '',
+        notes: foundVehicle.notes || '',
+        kilometrageJournalier: foundVehicle.kilometrageJournalier?.toString() || '',
+        photo: foundVehicle.photo || undefined,
+        prix_base_24h: foundVehicle.prix_base_24h || 0,
       });
     }
   }, [id, vehicles]);
@@ -63,10 +77,22 @@ export default function EditVehicle() {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return;
     }
-
+    // Contrôle des valeurs typées
+    const statutValide = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'].includes(formData.statut) ? formData.statut : 'Disponible';
+    const carburantValide = ['Essence', 'Diesel', 'Électrique', 'Hybride'].includes(formData.carburant) ? formData.carburant : 'Essence';
+    const financementValide = ['Achat comptant', 'Leasing', 'LLD', 'Mise à disposition'].includes(formData.financement) ? formData.financement : 'Achat comptant';
+    const vehicleId = Array.isArray(id) ? id[0] : id;
     setLoading(true);
     try {
-      await updateVehicle(id, formData);
+      await updateVehicle(vehicleId, {
+        ...formData,
+        statut: statutValide,
+        carburant: carburantValide,
+        financement: financementValide,
+        assuranceMensuelle: Number(formData.assuranceMensuelle) || 0,
+        kilometrageJournalier: Number(formData.kilometrageJournalier) || 0,
+        prix_base_24h: Number(formData.prix_base_24h) || 0,
+      });
       Alert.alert('Succès', 'Véhicule modifié avec succès', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -118,7 +144,7 @@ export default function EditVehicle() {
       padding: 12,
       fontSize: 16,
       color: colors.text,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
     },
     saveButton: {
       backgroundColor: colors.primary,

@@ -102,7 +102,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // If email is not verified, show the verification screen
-  if (!user.emailVerified) {
+  if (user && !user.emailVerified) {
     return <EmailVerificationMessage onRefresh={refreshUser} />;
   }
 
@@ -120,5 +120,11 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 16,
+    color: colors.text,
+    textAlign: 'center',
   },
 });

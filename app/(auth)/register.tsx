@@ -141,7 +141,8 @@ export default function RegisterScreen() {
         ]
       );
     } catch (error) {
-      Alert.alert('Erreur d\'inscription', error instanceof Error ? error.message : 'Une erreur est survenue');
+      console.error('Erreur d\'inscription:', error);
+      Alert.alert('Erreur d\'inscription', error instanceof Error ? error.message : JSON.stringify(error));
     } finally {
       setIsLoading(false);
     }

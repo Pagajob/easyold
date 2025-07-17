@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -7,6 +7,7 @@ import { useCharges } from '@/hooks/useCharges';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Charge } from '@/contexts/DataContext';
 import CalendarPicker from '@/components/CalendarPicker';
+import { AuthContext } from '@/contexts/AuthContext';
 
 interface ChargeModalProps {
   visible: boolean;
@@ -19,6 +20,8 @@ export default function ChargeModal({ visible, charge, onClose, defaultVehicleId
   const { colors } = useTheme();
   const { addCharge, updateCharge } = useCharges();
   const { vehicles } = useVehicles();
+  const auth = useContext(AuthContext);
+  const user = auth?.user;
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
@@ -73,6 +76,7 @@ export default function ChargeModal({ visible, charge, onClose, defaultVehicleId
         frequence: formData.frequence,
         vehiculeId: formData.vehiculeId || null,
         estPaiementProprietaire: formData.estPaiementProprietaire,
+        userId: user?.uid || '',
       };
 
       if (charge) {
@@ -430,5 +434,11 @@ vehicleOptionTextActive: {
   dateButtonText: {
     fontSize: 16,
     color: colors.text,
+  },
+  helpText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

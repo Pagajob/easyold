@@ -15,6 +15,8 @@ import { useNotificationContext } from '@/contexts/NotificationContext';
 import ClientCard from '@/components/cards/ClientCard';
 import VehicleCard from '@/components/cards/VehicleCard';
 import DateCard from '@/components/cards/DateCard';
+import SuccessToast from '@/components/reservations/SuccessToast';
+import { FirebaseService } from '@/services/firebaseService';
 
 // Helper function to convert URI to Blob
 const uriToBlob = async (uri: string): Promise<Blob> => {
@@ -41,6 +43,8 @@ export default function EtatLieuxDepartScreen() {
   const [signature, setSignature] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [edlData, setEdlData] = useState<EDLData | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const styles = createStyles(colors);
 
@@ -76,8 +80,22 @@ export default function EtatLieuxDepartScreen() {
   };
 
   const handleEDLComplete = async (wizardData: EDLData) => {
-    setEdlData(wizardData);
-    setShowSignatureModal(true);
+    try {
+      // Ajout en base (collection 'edls')
+      await FirebaseService.create('edls', {
+        ...wizardData,
+        reservationId,
+        createdAt: new Date().toISOString(),
+      });
+      setSuccessMessage('État des lieux enregistré avec succès !');
+      setShowSuccessToast(true);
+      // Redirection ou autre action après succès
+      setTimeout(() => {
+        router.push('/(tabs)');
+      }, 2000);
+    } catch (error) {
+      showError('Erreur lors de la sauvegarde de l\'état des lieux.');
+    }
   };
 
   const handleSaveEDL = async () => {
@@ -358,6 +376,7 @@ export default function EtatLieuxDepartScreen() {
 
       {renderSignatureModal()}
       {renderSuccessModal()}
+      <SuccessToast visible={showSuccessToast} message={successMessage} onClose={() => setShowSuccessToast(false)} />
     </SafeAreaView>
   );
 }

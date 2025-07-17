@@ -302,7 +302,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 28,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
     marginTop: 12,
     alignSelf: 'flex-start',
     gap: 6,

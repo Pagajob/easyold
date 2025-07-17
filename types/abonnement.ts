@@ -9,7 +9,7 @@ export interface Abonnement {
   nom: string;
   prixMensuel: number;
   description: string;
-  vehiculesMax: number;
+  vehiculesMax: number | 'illimité';
   reservationsMax: number | 'illimité';
   utilisateursMax: number | 'illimité';
   dureeStockageEDL: DureeStockageEDL;

@@ -89,7 +89,8 @@ export class ContractService {
       // Prepare contract data
       const contractData: ContractData = {
         nom_client: `${client.prenom} ${client.nom}`,
-        adresse_client: 'Non spécifiée', // Client address not in current schema
+        adresse_client: 'Non spécifiée',
+        email_client: client.email || '',
         telephone_client: client.telephone || 'Non spécifié',
         vehicule_marque: vehicle.marque,
         vehicule_modele: vehicle.modele,
@@ -100,7 +101,8 @@ export class ContractService {
         date_fin: formattedDateRetour,
         heure_fin: reservation.heureRetourPrevue,
         kilometrage_depart: reservation.kilometrageDepart?.toString() || 'À remplir',
-        kilometrage_inclus: vehicle.kilometrageJournalier.toString(),
+        kilometrage_depart_edl: '',
+        kilometrage_inclus: vehicle.kilometrageJournalier?.toString() || '',
         prixKmSupplementaire: vehicle.prixKmSupplementaire?.toString() || '0',
         cautiondepart: vehicle.cautionDepart?.toString() || '0',
         cautionRSV: vehicle.cautionRSV?.toString() || '0',
@@ -114,6 +116,13 @@ export class ContractService {
         jante_frottee: rimFee?.price.toString() || '150',
         nettoyage: cleaningFee?.price.toString() || '80',
         montant_location: reservation.montantLocation?.toString() || '0',
+        reservation_id: reservation.id,
+        date_generation: new Date().toISOString(),
+        signature_client: '',
+        logo_entreprise: companyInfo.logo || '',
+        type_contrat: reservation.typeContrat || '',
+        carburant_depart: '',
+        carburant_max: '',
       };
 
       // Create contract HTML content
@@ -216,7 +225,8 @@ startxref
     contractUrl: string,
     clientEmail: string,
     companyOwnerUserId: string,
-    companyName: string
+    companyName: string,
+    contractData: ContractData
   ): Promise<boolean> {
     try {
       // Use absolute URL for API calls
@@ -240,7 +250,7 @@ startxref
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #2563EB;">Contrat de location</h2>
               <p>Bonjour,</p>
-              <p>Veuillez trouver ci-joint votre contrat de location pour le véhicule <strong>${vehicleModel}</strong>.</p>
+              <p>Veuillez trouver ci-joint votre contrat de location pour le véhicule <strong>${contractData.vehicule_modele}</strong>.</p>
               <p>Vous pouvez télécharger votre contrat en cliquant sur le lien ci-dessous :</p>
               <p><a href="${contractUrl}" style="background-color: #2563EB; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Télécharger le contrat</a></p>
               <p>Merci de votre confiance.</p>

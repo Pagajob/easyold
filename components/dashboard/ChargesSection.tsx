@@ -85,7 +85,7 @@ export default function ChargesSection() {
                   <View style={styles.chargeInfo}>
                     <Text style={styles.chargeName}>{charge.nom}</Text>
                     <Text style={styles.chargeVehicle}>
-                      {getVehicleNameForCharge(charge.vehiculeId)}
+                      {charge.vehiculeId ? getVehicleNameForCharge(charge.vehiculeId) : ''}
                     </Text>
                   </View>
                   

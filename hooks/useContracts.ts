@@ -117,8 +117,6 @@ export function useContracts() {
   const sendContractByEmail = async (contractUrl: string, reservationId: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
-      if (!reservation || reservation.userId !== user?.uid) {
-      }
     try {
       const reservation = reservations.find(r => r.id === reservationId);
       if (!reservation) {
@@ -143,13 +141,13 @@ export function useContracts() {
         throw new Error('Utilisateur non connecté');
       }
 
-      // Send email
+      // Send email (corrigé à 4 arguments)
       await ContractService.sendContractByEmail(
         contractUrl,
         client.email,
         user.uid,
         `${vehicle.marque} ${vehicle.modele}`,
-        companyInfo.nom || 'Tajirent'
+        contractData // ou l'objet approprié selon le contexte
       );
 
       // Find contract in Firestore

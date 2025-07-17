@@ -1,10 +1,10 @@
 import { Timestamp } from 'firebase/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 // Initialiser Firebase Admin si ce n'est pas déjà fait
-let app;
+let app: App | undefined;
 if (!getApps().length) {
   try {
     // Récupérer les variables d'environnement pour Firebase Admin

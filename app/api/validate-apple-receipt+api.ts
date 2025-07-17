@@ -1,13 +1,16 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 
-// Remplace par le chemin de ta clé de service Firebase
-const serviceAccount = require('../../../config/serviceAccountKey.json');
-
+// Initialisation Firebase Admin via variable d'environnement base64
 if (!getApps().length) {
+  const base64 = process.env.FIREBASE_KEY_BASE64;
+  if (!base64) {
+    throw new Error('FIREBASE_KEY_BASE64 manquant dans les variables d\'environnement');
+  }
+  const jsonStr = Buffer.from(base64, 'base64').toString('utf-8');
+  const parsedKey = JSON.parse(jsonStr);
   initializeApp({
-    credential: cert(serviceAccount),
+    credential: cert(parsedKey),
   });
 }
 
@@ -16,7 +19,7 @@ const db = getFirestore();
 const APPLE_PROD_URL = 'https://buy.itunes.apple.com/verifyReceipt';
 const APPLE_SANDBOX_URL = 'https://sandbox.itunes.apple.com/verifyReceipt';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée' });
   const { receiptData, userId } = req.body;
   if (!receiptData || !userId) return res.status(400).json({ error: 'Reçu ou utilisateur manquant' });

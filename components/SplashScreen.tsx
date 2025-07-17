@@ -186,7 +186,7 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Background gradient */}
+      {/* Background gradient violet/rose */}
       <Animated.View style={[styles.background, backgroundOpacity.value ? { opacity: backgroundOpacity.value } : {}]}>
         <LinearGradient
           colors={['#8B5CF6', '#A21CAF', '#EC4899']}

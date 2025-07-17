@@ -11,9 +11,9 @@ export default function ProfileGuard({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (!loading && user && !entreprise && pathname !== '/onboarding') {
-      router.replace('/onboarding');
+      router.replace('/onboarding' as any);
     } else if (!loading && user && entreprise && userProfile && (!userProfile.prenom || !userProfile.nom || !userProfile.telephone) && pathname !== '/onboarding-profile') {
-      router.replace('/onboarding-profile');
+      router.replace('/onboarding-profile' as any);
     }
   }, [user, userProfile, entreprise, loading, entrepriseLoading, pathname]);
 

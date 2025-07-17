@@ -163,8 +163,8 @@ export default function ReservationsCalendarModal({ visible, onClose }: { visibl
           <ScrollView contentContainerStyle={styles.calendarContent} showsVerticalScrollIndicator={false}>
             <View style={styles.calendarGrid}>
               {days.map((date, index) => {
-                const dateReservations = getReservationsForDate(date);
-                const isTodayDate = isToday(date);
+                const dateReservations = date ? getReservationsForDate(date) : [];
+                const isTodayDate = date ? isToday(date) : false;
                 
                 return (
                   <View key={index} style={[styles.cell, isTodayDate && styles.todayCell]}>

@@ -44,7 +44,7 @@ export default function ReservationsCalendarScreen() {
   const reservationsByDay: { [key: string]: any[] } = {};
   reservations.forEach(res => {
     const start = new Date(res.dateDebut);
-    const end = new Date(res.dateFin);
+    const end = new Date(res.dateRetourPrevue);
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().slice(0, 10);
       if (!reservationsByDay[key]) reservationsByDay[key] = [];

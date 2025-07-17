@@ -64,7 +64,7 @@ export function useReservations() {
         const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24)) || 1;
         
         // Calculate payment based on daily rate
-        return sum + (vehicle.prixReverse24h * durationDays);
+        return sum + ((vehicle.prixReverse24h ?? 0) * durationDays);
       }, 0);
     
     return explicitPayments + calculatedPayments;

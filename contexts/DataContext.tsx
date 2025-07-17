@@ -21,7 +21,16 @@ export interface Vehicle {
   statut: 'Disponible' | 'Loué' | 'Maintenance' | 'Indisponible';
   notes: string;
   kilometrageJournalier: number;
-  
+
+  // Champs additionnels pour compatibilité UI/édition
+  annee?: string;
+  couleur?: string;
+  transmission?: string;
+  nombrePlaces?: string;
+  prixJour?: string;
+  kilometrage?: string;
+  numeroSerie?: string;
+
   // Nouveaux champs de prix
   prix_base_24h: number;
   prix_base_weekend?: number;
@@ -90,7 +99,7 @@ export interface Reservation {
   heureRetourPrevue: string;
   kilometrageDepart?: number;
   kilometrageRetour?: number;
-  statut: 'Planifiée' | 'Confirmé' | 'En cours' | 'Terminé' | 'Annulé';
+  statut: 'Planifiée' | 'Confirmé' | 'En cours' | 'Terminé' | 'Annulé' | 'confirmée';
   
   // État des lieux
   edlDepart?: {
@@ -126,6 +135,10 @@ export interface Reservation {
   
   // Nouveau champ pour le montant reversé au propriétaire
   montantReverseProprietaire?: number;
+
+  // Champs ajoutés pour la compatibilité UI
+  notes?: string;
+  kilometrageInclus?: number;
 }
 
 interface DataContextType {

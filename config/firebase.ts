@@ -5,13 +5,12 @@ import { getAuth, connectAuthEmulator, setPersistence, indexedDBLocalPersistence
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAJiD77M7pha3HCrs-xf8vEpnNUaN2_w2c",
+  apiKey: "AIzaSyA5DwMpXgH_wydbIP5BTs0JF58lY5u_p8s",
   authDomain: "tajirent-39852.firebaseapp.com",
   projectId: "tajirent-39852",
-  storageBucket: "tajirent-39852.firebasestorage.app",
+  storageBucket: "tajirent-39852.appspot.com",
   messagingSenderId: "587793687612",
-  appId: "1:587793687612:web:a9989cd5c11c2b27678f39",
-  measurementId: "G-SWX4CL3DGG"
+  appId: "1:587793687612:ios:49f58e043fc566c0678f39"
 };
 
 // Initialize Firebase

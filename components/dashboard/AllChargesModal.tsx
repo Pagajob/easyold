@@ -106,13 +106,13 @@ export default function AllChargesModal({
                     <View style={styles.chargeActions}>
                       <TouchableOpacity
                         style={styles.editButton}
-                        onPress={() => onEditCharge(charge)}
+                        onPress={() => onEditCharge && onEditCharge(charge)}
                       >
                         <Settings size={14} color={colors.primary} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() => handleDeleteCharge(charge.id, charge.nom)}
+                        onPress={() => onDeleteCharge && handleDeleteCharge(charge.id, charge.nom)}
                       >
                         <Trash2 size={14} color={colors.error} />
                       </TouchableOpacity>
@@ -241,8 +241,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: colors.primary + '20',
-    borderRadius: 28,
     justifyContent: 'center',
+    alignItems: 'center', // Ajouté pour le centrage
   },
   deleteButton: {
     width: 32,

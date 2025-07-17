@@ -25,10 +25,10 @@ export default function FuelLevelSlider({
   return (
     <View style={styles.container}>
       <View style={styles.iconsRow}>
-        <Fuel size={18} color={colors.textSecondary} />
-        <View style={styles.sliderContainer}>
+        <Fuel size={22} color={colors.textSecondary} style={{ marginRight: 12 }} />
+        <View style={[styles.sliderContainer, { flex: 1, marginHorizontal: 0, paddingRight: 0 }]}>
           <Slider
-            style={{ width: '100%', height: 40 }}
+            style={{ width: '100%', height: 40, minWidth: 220, maxWidth: '100%' }}
             minimumValue={0}
             maximumValue={maxLevel}
             step={1}
@@ -39,7 +39,6 @@ export default function FuelLevelSlider({
             thumbTintColor={colors.primary}
           />
         </View>
-        <Fuel size={18} color={colors.text} />
       </View>
 
       <View style={styles.labelRow}>
@@ -64,7 +63,8 @@ const createStyles = (colors: any) =>
     },
     sliderContainer: {
       flex: 1,
-      marginHorizontal: 12,
+      marginHorizontal: 0,
+      paddingRight: 0,
     },
     labelRow: {
       flexDirection: 'row',

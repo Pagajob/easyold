@@ -16,7 +16,7 @@ const STATUT_OPTIONS = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'];
 export default function AddVehicleScreen() {
   const { colors } = useTheme();
   const { addVehicle } = useData();
-  const { user, userProfile } = useAuth();
+  const { user, abonnementUtilisateur, getAbonnementCourant } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showRestrictionModal, setShowRestrictionModal] = useState(false);
   
@@ -318,15 +318,12 @@ export default function AddVehicleScreen() {
 
   // Contrôle de la limite d'abonnement
   const { vehicles } = useData();
-  const vehiculesMax = userProfile?.plan === 'essentiel' ? 5 : 
-                      userProfile?.plan === 'pro' ? 30 : 
-                      userProfile?.plan === 'premium' ? 999 : 1;
-                      
+  const vehiculesMax = getAbonnementCourant()?.vehiculesMax ?? 1;
   useEffect(() => {
-    if (vehicles.length >= vehiculesMax) {
+    if (typeof vehiculesMax === 'number' && vehicles.length >= vehiculesMax) {
       setShowRestrictionModal(true);
     }
-  }, [vehicles, vehiculesMax]);
+  }, [vehicles.length, vehiculesMax]);
 
   if (showRestrictionModal) {
     return (

@@ -26,7 +26,7 @@ import { collection, query, where, getDocs, updateDoc, Timestamp, getFirestore }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
-import { AbonnementUtilisateur } from '@/types/abonnement';
+import { AbonnementUtilisateur, Abonnement } from '@/types/abonnement';
 import * as IAP from '@/services/iapService';
 
 export interface UserProfile {
@@ -59,12 +59,14 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   updateUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
   updateUserEmail: (currentPassword: string, newEmail: string) => Promise<void>;
-  updateUserProfile?: (data: Partial<UserProfile>) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   enableBiometricAuth: () => Promise<boolean>;
   disableBiometricAuth: () => Promise<boolean>;
   canUseBiometric: boolean;
   biometricTypeName: string;
   abonnementUtilisateur: AbonnementUtilisateur | null;
+  abonnements: Abonnement[];
+  getAbonnementCourant: () => Abonnement | undefined;
   refreshAbonnement: () => Promise<void>;
   acheterAbonnement: (productId: string) => Promise<void>;
   restaurerAbonnement: () => Promise<void>;
@@ -72,12 +74,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export { AuthContext };
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false); 
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [abonnementUtilisateur, setAbonnementUtilisateur] = useState<AbonnementUtilisateur | null>(null);
+  const [abonnements, setAbonnements] = useState<Abonnement[]>([]);
+
+  // Charger tous les abonnements Firestore au démarrage
+  useEffect(() => {
+    const fetchAbonnements = async () => {
+      try {
+        const abonnementsRef = collection(db, 'abonnements');
+        const snapshot = await getDocs(abonnementsRef);
+        const abonnementsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Abonnement[];
+        setAbonnements(abonnementsList);
+      } catch (error) {
+        console.error('Erreur lors du chargement des abonnements:', error);
+      }
+    };
+    fetchAbonnements();
+  }, []);
+
+  // Helper pour obtenir l’objet Abonnement courant
+  const getAbonnementCourant = () => {
+    if (!abonnementUtilisateur || !abonnements.length) return undefined;
+    return abonnements.find(a => a.id === abonnementUtilisateur.abonnement);
+  };
 
   // Hook pour l'authentification biométrique
   const biometricAuth = useBiometricAuth();
@@ -135,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (user && userProfile && (!userProfile.prenom || !userProfile.nom || !userProfile.telephone)) {
       // Rediriger vers l'onboarding profil utilisateur
-      router.replace('/onboarding-profile');
+      router.replace('/profile');
     }
   }, [user, userProfile]);
 
@@ -186,13 +212,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ],
       });
       if (credential) {
-        const { OAuthProvider } = await import('firebase/auth'); 
-        const provider = new OAuthProvider('apple.com');
-        const authCredential = provider.credential({
-          idToken: credential.identityToken || '',
-          // rawNonce: credential.nonce, // à activer si tu gères le nonce
-        });
-        await signInWithCredential(auth, authCredential);
+        // const { OAuthProvider } = await import('firebase/auth'); // Import dynamique non supporté en mode strict
+        // const provider = new OAuthProvider('apple.com');
+        // const authCredential = provider.credential({
+        //   idToken: credential.idToken,
+        // });
+        // await signInWithCredential(auth, authCredential);
         // Le profil utilisateur sera complété via l'onboarding
       }
       await configurePersistence();
@@ -472,7 +497,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const acheterAbonnement = async (productId: string) => {
     const purchase = await IAP.buySubscription(productId);
     // Récupérer le reçu de la transaction
-    const receipt = purchase?.transactionReceipt;
+    const receipt = (purchase as any)?.transactionReceipt;
     if (receipt && user) {
       await IAP.validateAppleReceipt(receipt, user.uid);
     }
@@ -483,7 +508,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const restaurerAbonnement = async () => {
     const purchases = await IAP.restorePurchases();
     // Prendre le reçu du dernier achat restauré
-    const receipt = purchases?.[0]?.transactionReceipt;
+    const receipt = (purchases?.[0] as any)?.transactionReceipt;
     if (receipt && user) {
       await IAP.validateAppleReceipt(receipt, user.uid);
     }
@@ -518,6 +543,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         canUseBiometric: biometricAuth.canUseBiometric(),
         biometricTypeName: biometricAuth.getBiometricTypeName(),
         abonnementUtilisateur,
+        abonnements,
+        getAbonnementCourant,
         refreshAbonnement,
         acheterAbonnement,
         restaurerAbonnement,

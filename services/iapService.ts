@@ -52,7 +52,7 @@ export async function getSubscriptions() {
         }
       ];
     } else {
-      const subs = await RNIap.getSubscriptions(productIds);
+      const subs = await RNIap.getSubscriptions({ skus: productIds });
       return subs;
     }
   } catch (e) {
@@ -72,7 +72,7 @@ export async function buySubscription(productId: string) {
         transactionReceipt: 'web-receipt-' + Date.now(),
       };
     } else {
-      return await RNIap.requestSubscription(productId);
+      return await RNIap.requestSubscription({ sku: productId });
     }
   } catch (e) {
     console.warn('Erreur achat abonnement:', e);

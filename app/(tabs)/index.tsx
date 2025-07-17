@@ -16,7 +16,7 @@ import ChargesSection from '@/components/dashboard/ChargesSection';
 import VehicleChargesSection from '@/components/dashboard/VehicleChargesSection';
 import TodayDeparturesSection from '@/components/dashboard/TodayDeparturesSection';
 import NotificationDemo from '@/components/NotificationDemo';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { useNotificationContext } from '@/contexts/NotificationContext';
 
@@ -143,37 +143,10 @@ export default function DashboardScreen() {
     setLastScrollY(currentScrollY);
   };
 
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
-      <Animated.View 
-        style={[
-          styles.header,
-          {
-            transform: [{
-              translateY: headerAnimation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [-300, 0],
-              })
-            }],
-            opacity: headerAnimation.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: [0, 0, 1],
-            }),
-          }
-        ]}
-      >
-        <Text style={styles.title}>Tableau de bord</Text>
-        <View style={styles.logoTitleContainer}>
-          <Text style={styles.welcomeText}>Bienvenue</Text>
-          <TouchableOpacity onPress={() => router.push('/settings')} style={styles.logoContainer}>
-            {companyInfo.logo ? (
-              <Image source={{ uri: companyInfo.logo }} style={styles.logo} />
-            ) : (
-              <Image source={require('@/assets/images/easygarage-icon.png')} style={styles.logo} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         style={styles.scrollView} 
@@ -181,6 +154,19 @@ export default function DashboardScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        <View style={styles.headerInScroll}>
+          <Text style={styles.title}>Tableau de bord</Text>
+          <View style={styles.logoTitleContainer}>
+            <Text style={styles.welcomeText}>Bienvenue</Text>
+            <TouchableOpacity onPress={() => router.push('/settings')} style={styles.logoContainer}>
+              {companyInfo.logo ? (
+                <Image source={{ uri: companyInfo.logo }} style={styles.logo} />
+              ) : (
+                <Image source={require('@/assets/images/easygarage-icon.png')} style={styles.logo} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <StatsCards
           vehiclesCount={vehicles.length}
@@ -211,7 +197,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === 'ios' ? 60 : 30, // Ajout d'un padding pour compenser la suppression du SafeAreaView
+    paddingTop: Platform.OS === 'ios' ? 0 : 0, // Ajout d'un padding pour compenser la suppression du SafeAreaView
   },
   headerSafe: { backgroundColor: colors.background },
   header: { 
@@ -302,5 +288,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 28,
+  },
+  headerInScroll: {
+    alignItems: 'center',
+    marginBottom: 32, // Ajoute de l'espace sous le logo
   },
 });

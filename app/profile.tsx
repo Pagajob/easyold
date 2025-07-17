@@ -32,7 +32,9 @@ export default function ProfileScreen() {
 
     setIsUpdatingProfile(true);
     try {
-      await updateUserProfile({ name });
+      if (typeof updateUserProfile === 'function') {
+        await updateUserProfile({ name });
+      }
       Alert.alert('Succès', 'Votre profil a été mis à jour');
     } catch (error) {
       Alert.alert('Erreur', error instanceof Error ? error.message : 'Une erreur est survenue');

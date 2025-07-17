@@ -12,11 +12,13 @@ import {
   where,
   limit as firestoreLimit,
   Timestamp,
-  enableIndexedDbPersistence 
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMemoryLocalCache
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '@/config/firebase';
-import { Vehicle, Client, Charge, Reservation } from '@/contexts/DataContext';
+import { db, storage, app } from '../config/firebase';
+import { Vehicle, Client, Charge, Reservation } from '../contexts/DataContext';
 
 // Collections
 const COLLECTIONS = {
@@ -28,11 +30,24 @@ const COLLECTIONS = {
   ENTREPRISES: 'entreprises',
 };
 
-// Enable offline persistence
-try {
-  enableIndexedDbPersistence(db);
-} catch (err) {
-  console.warn('Firestore persistence failed:', err);
+// Nouvelle méthode de persistance Firestore (web uniquement)
+if (typeof window !== 'undefined') {
+  try {
+    initializeFirestore(app, {
+      localCache: persistentLocalCache()
+    });
+    console.log('Firestore persistentLocalCache (IndexedDB) activé');
+  } catch (err) {
+    console.warn('Firestore IndexedDB persistence failed, fallback to memory cache:', err);
+    try {
+      initializeFirestore(app, {
+        localCache: persistentMemoryLocalCache()
+      });
+      console.log('Firestore persistentMemoryLocalCache (RAM) activé');
+    } catch (err2) {
+      console.error('Firestore memory cache fallback failed:', err2);
+    }
+  }
 }
 
 // Generic CRUD operations
@@ -519,4 +534,72 @@ export class EntrepriseService {
     const path = `entreprises/${userId}/logo`;
     return FirebaseService.uploadFile(file, path);
   }
+}
+
+// --- Script d'initialisation automatique des plans d'abonnement Firestore ---
+import { Abonnement } from '../types/abonnement';
+
+export async function seedAbonnementsPlans() {
+  const plans: Omit<Abonnement, 'id'>[] = [
+    {
+      nom: 'Gratuit',
+      prixMensuel: 0,
+      description: 'Découverte EasyGarage',
+      vehiculesMax: 1,
+      reservationsMax: 5,
+      utilisateursMax: 1,
+      dureeStockageEDL: '24h',
+      exportAutorisé: false,
+      personnalisationVisuelle: false,
+      multiSociete: false,
+      support: 'email',
+    },
+    {
+      nom: 'Essentiel',
+      prixMensuel: 9.99,
+      description: 'Pour les petits loueurs',
+      vehiculesMax: 5,
+      reservationsMax: 50,
+      utilisateursMax: 1,
+      dureeStockageEDL: '7 jours',
+      exportAutorisé: true,
+      personnalisationVisuelle: true,
+      multiSociete: false,
+      support: 'email',
+    },
+    {
+      nom: 'Pro',
+      prixMensuel: 19.99,
+      description: 'Pour les pros exigeants',
+      vehiculesMax: 30,
+      reservationsMax: 'illimité',
+      utilisateursMax: 5,
+      dureeStockageEDL: '1 mois',
+      exportAutorisé: true,
+      personnalisationVisuelle: true,
+      multiSociete: false,
+      support: 'prioritaire',
+    },
+    {
+      nom: 'Premium',
+      prixMensuel: 39.99,
+      description: 'Pour les groupes et franchises',
+      vehiculesMax: 'illimité',
+      reservationsMax: 'illimité',
+      utilisateursMax: 'illimité',
+      dureeStockageEDL: '1 an',
+      exportAutorisé: true,
+      personnalisationVisuelle: true,
+      multiSociete: true,
+      support: 'téléphone',
+    },
+  ];
+
+  for (const plan of plans) {
+    // Vérifie si le plan existe déjà (par nom)
+    const existing = await FirebaseService.getAll<Abonnement>('Abonnements');
+    if (existing.some(p => p.nom === plan.nom)) continue;
+    await FirebaseService.create<Abonnement>('Abonnements', plan);
+  }
+  console.log('Plans d\'abonnement Firestore initialisés.');
 }

@@ -14,25 +14,36 @@ import { ArrowLeft, Save } from 'lucide-react-native';
 import { useVehicles } from '../../hooks/useVehicles';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Vehicle } from '@/contexts/DataContext';
 
 export default function AddVehicle() {
   const { colors } = useTheme();
   const { addVehicle } = useVehicles();
   const [loading, setLoading] = useState(false);
   
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState({
     marque: '',
     modele: '',
     immatriculation: '',
     annee: '',
     couleur: '',
-    carburant: 'Essence',
+    carburant: 'Essence' as 'Essence' | 'Diesel' | 'Électrique' | 'Hybride',
     transmission: 'Manuelle',
     nombrePlaces: '5',
     prixJour: '',
     kilometrage: '',
     numeroSerie: '',
-    statut: 'Disponible',
+    statut: 'Disponible' as 'Disponible' | 'Loué' | 'Maintenance' | 'Indisponible',
+    userId: user?.uid || '',
+    financement: 'Achat comptant' as 'Achat comptant' | 'Leasing' | 'LLD' | 'Mise à disposition',
+    assuranceMensuelle: '',
+    notes: '',
+    kilometrageJournalier: '',
+    photo: undefined,
+    prix_base_24h: 0,
   });
 
   const handleSave = async () => {
@@ -40,10 +51,23 @@ export default function AddVehicle() {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return;
     }
-
+    // Contrôle de la valeur de statut
+    const statutValide = ['Disponible', 'Loué', 'Maintenance', 'Indisponible'].includes(formData.statut) ? formData.statut : 'Disponible';
+    // Contrôle de la valeur de carburant
+    const carburantValide = ['Essence', 'Diesel', 'Électrique', 'Hybride'].includes(formData.carburant) ? formData.carburant : 'Essence';
+    // Contrôle de la valeur de financement
+    const financementValide = ['Achat comptant', 'Leasing', 'LLD', 'Mise à disposition'].includes(formData.financement) ? formData.financement : 'Achat comptant';
     setLoading(true);
     try {
-      await addVehicle(formData);
+      await addVehicle({
+        ...formData,
+        statut: statutValide,
+        carburant: carburantValide,
+        financement: financementValide,
+        assuranceMensuelle: Number(formData.assuranceMensuelle) || 0,
+        kilometrageJournalier: Number(formData.kilometrageJournalier) || 0,
+        prix_base_24h: Number(formData.prix_base_24h) || 0,
+      });
       Alert.alert('Succès', 'Véhicule ajouté avec succès', [
         { text: 'OK', onPress: () => router.back() }
       ]);
@@ -95,7 +119,7 @@ export default function AddVehicle() {
       padding: 12,
       fontSize: 16,
       color: colors.text,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
     },
     saveButton: {
       backgroundColor: colors.primary,

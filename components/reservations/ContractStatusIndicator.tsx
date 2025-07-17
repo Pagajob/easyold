@@ -37,14 +37,7 @@ export default function ContractStatusIndicator({
       if (Platform.OS === 'web') {
         window.alert('Email manquant: Le client n\'a pas d\'adresse email. Veuillez ajouter une adresse email au client pour pouvoir envoyer le contrat.');
         
-        // Refresh contract URL
-        const contract = await getContractByReservationId(reservationId);
-        if (contract && contract.contractUrl) {
-          // Update reservation with contract URL
-          await updateReservation(reservationId, {
-            contratGenere: contract.contractUrl
-          });
-        }
+        // TODO: Rafraîchir l'URL du contrat ici si besoin (fonction à implémenter)
       } else {
         Alert.alert(
           'Email manquant',

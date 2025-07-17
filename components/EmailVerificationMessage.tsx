@@ -184,6 +184,8 @@ export default function EmailVerificationMessage({ onRefresh }: EmailVerificatio
         </View>
         
         <Text style={styles.title}>Vérifiez votre adresse email</Text>
+
+        <Text style={[styles.message, { fontWeight: 'bold', color: colors.error, marginBottom: 12 }]}>Pour vous connecter, veuillez valider votre compte via le lien envoyé par email.</Text>
         
         <Text style={styles.message}>
           Nous avons envoyé un lien de vérification à :

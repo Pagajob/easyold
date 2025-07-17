@@ -1,7 +1,7 @@
 // Service de validation pour l'état des lieux de départ (EDL)
 
 export interface EDLData {
-  mode: 'photo' | 'video';
+  mode?: 'photo' | 'video' | null;
   // Informations essentielles avant les photos
   kilometrage?: number;
   carburant?: number; // 1-4 (1=vide, 4=plein)
@@ -17,6 +17,8 @@ export interface EDLData {
     additionnelles?: string[];
   };
   video?: string;
+  renterSignature?: string | null;
+  clientSignature?: string | null;
 }
 
 // Clés des photos obligatoires selon le mode

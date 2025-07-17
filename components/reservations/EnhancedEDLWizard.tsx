@@ -31,7 +31,9 @@ import {
   Clock,
   Star,
   Fuel,
-  Gauge
+  Gauge,
+  CheckSquare,
+  Square
 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,6 +53,7 @@ import {
 } from '@/services/edlValidation';
 import FuelLevelSlider from '@/components/reservations/FuelLevelSlider';
 import DateCard from '@/components/cards/DateCard';
+import SignaturePad from '@/components/SignaturePad';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -239,6 +242,11 @@ export default function EnhancedEDLWizard({
   const [kilometrage, setKilometrage] = useState('');
   const [carburant, setCarburant] = useState(4);
   const [accessoires, setAccessoires] = useState('');
+  const [noEDL, setNoEDL] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [renterSignature, setRenterSignature] = useState<string | null>(null);
+  const [clientSignature, setClientSignature] = useState<string | null>(null);
+  const [signingStep, setSigningStep] = useState<'renter' | 'client'>('renter');
   
   // Animations
   const progressAnimation = useRef(new Animated.Value(0)).current;
@@ -251,9 +259,14 @@ export default function EnhancedEDLWizard({
 
   const styles = createStyles(colors);
 
-  // Calculer la progression
-  const progress = calculateProgress(edlData);
-  const remainingSteps = getRemainingSteps(edlData);
+  // Progression spéciale si pas d’EDL : 100% si champs essentiels remplis
+  const essentialsFilled =
+    (edlData.kilometrage !== undefined && edlData.kilometrage !== null)
+    && (edlData.carburant !== undefined && edlData.carburant !== null);
+  const progress = noEDL
+    ? (essentialsFilled ? 100 : 0)
+    : calculateProgress(edlData);
+  const remainingSteps = noEDL ? [] : getRemainingSteps(edlData);
   const validation = validateEDL(edlData);
 
   // Animer la barre de progression
@@ -267,22 +280,26 @@ export default function EnhancedEDLWizard({
 
   // Animation de pulsation pour les étapes importantes
   useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnimation, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnimation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
     if (remainingSteps.length > 0) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnimation, {
-            toValue: 1.1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnimation, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+      loop.start();
     }
+    return () => {
+      loop.stop();
+    };
   }, [remainingSteps]);
 
   const openCamera = async (target: string) => {
@@ -334,7 +351,7 @@ export default function EnhancedEDLWizard({
     }));
   };
 
-  const handleModeChange = (mode: 'photo' | 'video') => {
+  const handleModeChange = (mode: 'photo' | 'video' | undefined) => {
     setEdlData(prev => ({
       ...prev,
       mode,
@@ -344,7 +361,22 @@ export default function EnhancedEDLWizard({
   };
 
   const handleComplete = () => {
-    if (!validation.isValid) {
+
+    // Cas où l’utilisateur ne souhaite pas d’EDL photo/vidéo
+    if (noEDL) {
+      // On vérifie seulement les champs essentiels (kilométrage, carburant)
+      const missing: string[] = [];
+      if (edlData.kilometrage === undefined || edlData.kilometrage === null) missing.push('kilométrage');
+      if (edlData.carburant === undefined || edlData.carburant === null) missing.push('carburant');
+      if (missing.length > 0) {
+        Alert.alert(
+          'Champs obligatoires manquants',
+          `Veuillez renseigner : ${missing.join(', ')}`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    } else if (!validation.isValid) {
       Alert.alert(
         'Étapes manquantes',
         `Veuillez compléter toutes les étapes obligatoires avant de finaliser l'état des lieux.\n\nÉtapes manquantes : ${remainingSteps.length}`,
@@ -353,12 +385,19 @@ export default function EnhancedEDLWizard({
       return;
     }
 
+    // Ouvre le modal de signature si tout est OK
+    setShowSignatureModal(true);
+  };
+
+  // Validation finale après signature
+  const handleFinalValidation = () => {
+    setShowSignatureModal(false);
     Alert.alert(
       'Finaliser l\'état des lieux',
       'Êtes-vous sûr de vouloir finaliser l\'état des lieux ? Cette action ne peut pas être annulée.',
       [
         { text: 'Annuler', style: 'cancel' },
-        { text: 'Finaliser', onPress: () => onComplete(edlData) }
+        { text: 'Finaliser', onPress: () => onComplete({ ...edlData, renterSignature, clientSignature }) }
       ]
     );
   };
@@ -378,9 +417,9 @@ export default function EnhancedEDLWizard({
         onPress={handleComplete}
         style={[
           styles.completeButton,
-          !validation.isValid && styles.completeButtonDisabled
+          ((noEDL && !essentialsFilled) || (!noEDL && !validation.isValid)) && styles.completeButtonDisabled
         ]}
-        disabled={!validation.isValid}
+        disabled={(noEDL && !essentialsFilled) || (!noEDL && !validation.isValid)}
       >
         <Save size={24} color={colors.background} />
       </TouchableOpacity>
@@ -427,48 +466,73 @@ export default function EnhancedEDLWizard({
   );
 
   const renderModeSelection = () => (
-    <View style={styles.modeContainer}>
+    <View>
+      {/* Case à cocher pour désactiver l’EDL photo/vidéo */}
       <TouchableOpacity
-        style={[
-          styles.modeButton,
-          edlData.mode === 'photo' && styles.modeButtonActive
-        ]}
-        onPress={() => handleModeChange('photo')}
+        style={styles.noEDLCheckboxRow}
+        onPress={() => {
+          setNoEDL(!noEDL);
+          if (!noEDL) handleModeChange(undefined);
+        }}
       >
-        <Camera size={24} color={edlData.mode === 'photo' ? colors.background : colors.text} />
-        <Text style={[
-          styles.modeButtonText,
-          edlData.mode === 'photo' && styles.modeButtonTextActive
-        ]}>
-          Mode Photo
-        </Text>
-        <Text style={styles.modeDescription}>
-          Photos détaillées de chaque partie
-        </Text>
+        {noEDL ? (
+          <CheckSquare size={22} color={colors.primary} />
+        ) : (
+          <Square size={22} color={colors.textSecondary} />
+        )}
+        <Text style={styles.noEDLCheckboxLabel}>Je ne souhaite pas d’EDL photo/vidéo</Text>
       </TouchableOpacity>
+      <View style={styles.modeContainer}>
+        <TouchableOpacity
+          style={[
+            styles.modeButton,
+            edlData.mode === 'photo' && styles.modeButtonActive,
+            noEDL && styles.modeButtonDisabled
+          ]}
+          onPress={() => { handleModeChange('photo'); setNoEDL(false); }}
+          disabled={noEDL}
+        >
+          <Camera size={32} color={edlData.mode === 'photo' ? colors.background : colors.text} />
+          <Text style={[
+            styles.modeButtonText,
+            edlData.mode === 'photo' && styles.modeButtonTextActive
+          ]}>
+            Mode Photo
+          </Text>
+          <Text style={styles.modeDescription}>
+            Photos détaillées de chaque partie
+          </Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[
-          styles.modeButton,
-          edlData.mode === 'video' && styles.modeButtonActive
-        ]}
-        onPress={() => handleModeChange('video')}
-      >
-        <Video size={24} color={edlData.mode === 'video' ? colors.background : colors.text} />
-        <Text style={[
-          styles.modeButtonText,
-          edlData.mode === 'video' && styles.modeButtonTextActive
-        ]}>
-          Mode Vidéo
-        </Text>
-        <Text style={styles.modeDescription}>
-          Vidéo complète du véhicule
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.modeButton,
+            edlData.mode === 'video' && styles.modeButtonActive,
+            noEDL && styles.modeButtonDisabled
+          ]}
+          onPress={() => { handleModeChange('video'); setNoEDL(false); }}
+          disabled={noEDL}
+        >
+          <Video size={32} color={edlData.mode === 'video' ? colors.background : colors.text} />
+          <Text style={[
+            styles.modeButtonText,
+            edlData.mode === 'video' && styles.modeButtonTextActive
+          ]}>
+            Mode Vidéo
+          </Text>
+          <Text style={styles.modeDescription}>
+            Vidéo complète du véhicule
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   const renderStepItem = (step: any, index: number) => {
+    // Si pas d'EDL, on masque les étapes 'compteur' et 'video'
+    if (noEDL && (step.key === 'compteur' || step.key === 'video')) {
+      return null;
+    }
     const isCompleted = isStepCompleted(edlData, step.key);
     const isMissing = remainingSteps.includes(step.key);
     const isCurrent = currentStep === index;
@@ -538,7 +602,6 @@ export default function EnhancedEDLWizard({
                 <FuelLevelSlider
                   value={carburant}
                   onValueChange={handleCarburantChange}
-                  style={styles.inlineFuelSlider}
                 />
               </View>
             )}
@@ -630,8 +693,8 @@ export default function EnhancedEDLWizard({
               <PhotoCard
                 key={step.key}
                 label={step.title}
-                image={edlData.photos[step.key]}
-                completed={!!edlData.photos[step.key]}
+                image={Array.isArray(edlData.photos[step.key as keyof typeof edlData.photos]) ? (edlData.photos[step.key as keyof typeof edlData.photos] as string[])[0] : (edlData.photos[step.key as keyof typeof edlData.photos] as string | undefined)}
+                completed={!!edlData.photos[step.key as keyof typeof edlData.photos]}
                 onPress={() => openCamera(step.key)}
               />
             ))}
@@ -646,48 +709,50 @@ export default function EnhancedEDLWizard({
   };
 
   const renderVideoStep = () => (
-    <View style={{ padding: 10 }}>
-      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-        {/* Case photo compteur */}
-        <PhotoCard
-          label="Compteur"
-          image={edlData.photos.compteur}
-          completed={!!edlData.photos.compteur}
-          onPress={() => openCamera('compteur')}
-        />
-        {/* Case vidéo */}
-        <TouchableOpacity onPress={() => {
-          setCurrentCaptureTarget('video');
-          setCameraMode('video');
-          setShowCamera(true);
-        }} activeOpacity={0.8} style={{ flex: 1, margin: 6 }}>
-          <View style={{
-            backgroundColor: '#F6F7FB',
-            borderRadius: 18,
-            alignItems: 'center',
-            justifyContent: 'center',
-            aspectRatio: 1,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 1,
-            borderWidth: edlData.video ? 2 : 1,
-            borderColor: edlData.video ? '#4CD964' : '#E0E3ED',
-            position: 'relative',
-          }}>
-            {edlData.video ? (
-              <CheckCircle size={36} color="#4CD964" />
-            ) : (
-              <Video size={36} color="#B0B3C6" />
-            )}
-          </View>
-          <Text style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#222', fontWeight: '500' }}>Vidéo</Text>
-        </TouchableOpacity>
-        {/* Case vide pour compléter la ligne */}
-        <View style={{ flex: 1, margin: 6 }} />
+    noEDL ? null : (
+      <View style={{ padding: 10 }}>
+        <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+          {/* Case photo compteur */}
+          <PhotoCard
+            label="Compteur"
+            image={edlData.photos.compteur}
+            completed={!!edlData.photos.compteur}
+            onPress={() => openCamera('compteur')}
+          />
+          {/* Case vidéo */}
+          <TouchableOpacity onPress={() => {
+            setCurrentCaptureTarget('video');
+            setCameraMode('video');
+            setShowCamera(true);
+          }} activeOpacity={0.8} style={{ flex: 1, margin: 6 }}>
+            <View style={{
+              backgroundColor: '#F6F7FB',
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              aspectRatio: 1,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 8,
+              elevation: 1,
+              borderWidth: edlData.video ? 2 : 1,
+              borderColor: edlData.video ? '#4CD964' : '#E0E3ED',
+              position: 'relative',
+            }}>
+              {edlData.video ? (
+                <CheckCircle size={36} color="#4CD964" />
+              ) : (
+                <Video size={36} color="#B0B3C6" />
+              )}
+            </View>
+            <Text style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#222', fontWeight: '500' }}>Vidéo</Text>
+          </TouchableOpacity>
+          {/* Case vide pour compléter la ligne */}
+          <View style={{ flex: 1, margin: 6 }} />
+        </View>
       </View>
-    </View>
+    )
   );
 
   const renderAdditionalPhotos = () => (
@@ -751,16 +816,12 @@ export default function EnhancedEDLWizard({
           </View>
           <Text style={styles.inputLabel}>Niveau de carburant</Text>
           <View style={styles.sliderRow}>
-            <Fuel size={20} color="#B0B3C6" style={{ marginRight: 8 }} />
             <View style={{ flex: 1 }}>
               <FuelLevelSlider
                 value={carburant}
                 onValueChange={handleCarburantChange}
-                style={styles.inlineFuelSlider}
               />
-              <Text style={styles.sliderValue}>Niveau : {carburant}/4</Text>
             </View>
-            <Fuel size={20} color="#B0B3C6" style={{ marginLeft: 8, transform: [{ scaleX: -1 }] }} />
           </View>
           <Text style={styles.inputLabel}>Accessoires fournis</Text>
           <View style={styles.inputFieldContainer}>
@@ -809,6 +870,41 @@ export default function EnhancedEDLWizard({
           onCapture={handleCapture}
           onClose={() => setShowCamera(false)}
         />
+      </Modal>
+
+      {/* Modal de signature */}
+      <Modal
+        visible={showSignatureModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowSignatureModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '90%', maxWidth: 400 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' }}>
+              {signingStep === 'renter' ? 'Signature du loueur' : 'Signature du client'}
+            </Text>
+            <SignaturePad
+              onOK={dataUrl => {
+                if (signingStep === 'renter') {
+                  setRenterSignature(dataUrl);
+                  setSigningStep('client');
+                } else {
+                  setClientSignature(dataUrl);
+                  setShowSignatureModal(false);
+                  handleFinalValidation();
+                }
+              }}
+              descriptionText={signingStep === 'renter' ? 'Veuillez signer en tant que loueur' : 'Veuillez signer en tant que client'}
+              clearText="Effacer"
+              confirmText="Valider la signature"
+              webStyle=".m-signature-pad--footer {display: none;}"
+            />
+            <TouchableOpacity onPress={() => setShowSignatureModal(false)} style={{ marginTop: 18, alignSelf: 'center' }}>
+              <Text style={{ color: '#888', fontSize: 16 }}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -950,35 +1046,37 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   modeContainer: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 16,
+    marginTop: 12,
   },
   modeButton: {
     flex: 1,
-    padding: 15,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 16,
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.border,
     alignItems: 'center',
+    minHeight: 120,
   },
   modeButtonActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primary,
   },
   modeButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.text,
-    marginTop: 8,
+    marginTop: 12,
   },
   modeButtonTextActive: {
     color: colors.background,
   },
   modeDescription: {
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   stepItem: {
     backgroundColor: colors.surface,
@@ -1229,5 +1327,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 5,
     textAlign: 'center',
+  },
+  noEDLCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginLeft: 2,
+  },
+  noEDLCheckboxLabel: {
+    marginLeft: 10,
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  modeButtonDisabled: {
+    opacity: 0.5,
   },
 }); 

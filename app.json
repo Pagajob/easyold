@@ -2,7 +2,7 @@
   "expo": {
     "name": "EasyGarage",
     "slug": "easygarage-app",
-    "version": "1.0.5",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/images/easygarage-icon.png",
     "scheme": "easygarage",
@@ -11,6 +11,8 @@
     "ios": {
       "bundleIdentifier": "com.allanox.easygarage.app",
       "supportsTablet": true,
+      "minimumOsVersion": "15.0",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -37,7 +39,8 @@
         {
           "serviceId": "com.allanox.easygarage.app"
         }
-      ]
+      ],
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true
@@ -49,6 +52,11 @@
       "eas": {
         "projectId": "301807a1-852a-4356-859d-ff9cdbd6fd3b"
       }
+    },
+    "splash": {
+      "image": "./assets/images/lucid.png",
+      "backgroundColor": "#8B5CF6",
+      "resizeMode": "contain"
     }
   }
 }

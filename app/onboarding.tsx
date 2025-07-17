@@ -298,6 +298,7 @@ export default function OnboardingScreen() {
 
       setIsLoading(true);
       try {
+        if (!user) return;
         const entrepriseDoc = await getDoc(doc(db, 'entreprises', user.uid));
         if (entrepriseDoc.exists()) {
           // User already completed onboarding, redirect to dashboard
@@ -393,6 +394,7 @@ export default function OnboardingScreen() {
   const handleSubmit = async () => {
     if (!user) {
       Alert.alert('Erreur', 'Vous devez être connecté pour continuer.');
+      console.error('Onboarding : utilisateur non connecté');
       return;
     }
 
@@ -443,11 +445,11 @@ export default function OnboardingScreen() {
 
       await AsyncStorage.setItem(`companyInfo_${user.uid}`, JSON.stringify(companyInfo));
       
-      // Redirect to dashboard
-      router.replace('/(tabs)');
+      // Redirection vers la page d'accueil (dashboard)
+      router.replace('/');
     } catch (error) {
       console.error('Erreur Firestore onboarding:', error);
-      Alert.alert('Erreur', `Impossible de sauvegarder les informations.\n${error instanceof Error ? error.message : String(error)}`);
+      Alert.alert('Erreur', `Impossible de sauvegarder les informations.\n${error instanceof Error ? error.message : JSON.stringify(error)}`);
     } finally {
       setIsSubmitting(false);
     }
